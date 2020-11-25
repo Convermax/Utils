@@ -23,6 +23,8 @@
       setTimeout(() => {
         window.Convermax = {};
 
+        console.log('%cConvermax DEV UserScript', 'color: palevioletred; background: darkslateblue; font-size: 44px;')
+        
         injectScript('https://localhost:3000/vendor.dev.bundle.js');
         injectScript('https://localhost:3000/templates.js');
         injectScript('https://localhost:3000/main.js');
