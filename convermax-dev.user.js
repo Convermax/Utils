@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      3
+// @version      4
 // @run-at       document-start
 // @grant        none
 // @include      http://*
@@ -17,8 +17,8 @@
     const scriptTag = document.querySelector('script[src*="convermax.com"]');
 
     if (scriptTag || localStorage["cm_inject-script"]) {
-      scriptTag.src = '';
-      scriptTag.remove();
+      scriptTag?.src = '';
+      scriptTag?.remove();
 
       setTimeout(() => {
         window.Convermax = {};
