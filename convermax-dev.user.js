@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      5
+// @version      6
 // @run-at       document-start
 // @grant        none
 // @include      http://*
@@ -16,12 +16,14 @@
   new MutationObserver((_, observer) => {
     const scriptTag = document.querySelector('script[src*="convermax.com"]');
 
-    if (scriptTag || localStorage["cm_inject-script"]) {
+    if ((scriptTag || localStorage["cm_inject-script"]) && !window.ConvermaxInjected) {
       if (scriptTag) {
         scriptTag.src = '';
         scriptTag.remove();        
       }
 
+      window.ConvermaxInjected = true;
+      
       setTimeout(() => {
         window.Convermax = {};
 
