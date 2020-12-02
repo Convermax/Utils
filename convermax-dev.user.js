@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      2
+// @version      3
 // @run-at       document-start
 // @grant        none
 // @include      http://*
@@ -16,7 +16,7 @@
   new MutationObserver((_, observer) => {
     const scriptTag = document.querySelector('script[src*="convermax.com"]');
 
-    if (scriptTag) {
+    if (scriptTag || localStorage["cm_inject-script"]) {
       scriptTag.src = '';
       scriptTag.remove();
 
