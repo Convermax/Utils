@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      6
+// @version      7
 // @run-at       document-start
 // @grant        none
 // @include      http://*
@@ -10,8 +10,9 @@
 
 (function() {
   'use strict';
-
-  window.Convermax = { loaded: true };
+  
+  window.Convermax = window.Convermax || {};
+  window.Convermax.loaded = true;
 
   new MutationObserver((_, observer) => {
     const scriptTag = document.querySelector('script[src*="convermax.com"]');
@@ -25,7 +26,7 @@
       window.ConvermaxInjected = true;
       
       setTimeout(() => {
-        window.Convermax = {};
+        window.Convermax.loaded = false;
 
         console.log('%cConvermax DEV UserScript', 'color: palevioletred; background: darkslateblue; font-size: 44px;')
         
