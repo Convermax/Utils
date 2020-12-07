@@ -45,6 +45,7 @@
       const localStyleTag = document.createElement('link');
       localStyleTag.rel = 'stylesheet';
       localStyleTag.href = 'https://localhost:3000/search.css';
+      document.head.appendChild(localStyleTag);
     }
   })
     .observe(document.documentElement, { childList: true, subtree: true });
