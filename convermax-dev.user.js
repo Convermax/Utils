@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      8
+// @version      9
 // @run-at       document-start
 // @grant        none
 // @include      http://*
