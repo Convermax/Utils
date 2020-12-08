@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      9
+// @version      10
 // @run-at       document-start
 // @grant        none
 // @include      http://*
@@ -12,23 +12,24 @@
   'use strict';
 
   window.Convermax = window.Convermax || {};
-  window.Convermax.loaded = true;
+  window.Convermax.loaded = true; // for the legacy script version
+  window.Convermax.devScriptEnabled = true;
 
   new MutationObserver((_, observer) => {
     const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find(s => s.src.includes('search.min.js'));
 
-    if ((scriptTag || localStorage["cm_inject-script"]) && !window.ConvermaxInjected) {
+    if ((scriptTag || localStorage["cm_inject-script"]) && !window.ConvermaxDevScriptInjected) {
       if (scriptTag) {
         scriptTag.src = '';
         scriptTag.remove();
       }
 
-      window.ConvermaxInjected = true;
+      window.ConvermaxDevScriptInjected = true;
 
       setTimeout(() => {
         observer.disconnect();
 
-        window.Convermax.loaded = false;
+        window.Convermax.loaded = false; // for the legacy script version
 
         console.log('%cConvermax DEV UserScript', 'color: palevioletred; background: darkslateblue; font-size: 44px;')
 
