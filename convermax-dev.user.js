@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      11
+// @version      12
 // @run-at       document-start
 // @grant        none
 // @include      http://*
@@ -45,7 +45,7 @@
       const localStyleTag = document.createElement('link');
       localStyleTag.rel = 'stylesheet';
       localStyleTag.href = 'https://localhost:3000/search.css';
-      styleTag.parent.replaceChild(localStyleTag, styleTag);
+      styleTag.parentElement.replaceChild(localStyleTag, styleTag);
     }
   })
     .observe(document.documentElement, { childList: true, subtree: true });
