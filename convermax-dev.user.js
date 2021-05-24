@@ -42,11 +42,10 @@
     const styleTag = document.querySelector('link[href*="convermax.com"]');
 
     if (styleTag) {
-      styleTag?.remove();
       const localStyleTag = document.createElement('link');
       localStyleTag.rel = 'stylesheet';
       localStyleTag.href = 'https://localhost:3000/search.css';
-      document.head.appendChild(localStyleTag);
+      styleTag.parent.replaceChild(localStyleTag, styleTag);
     }
   })
     .observe(document.documentElement, { childList: true, subtree: true });
