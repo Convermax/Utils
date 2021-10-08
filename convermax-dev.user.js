@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      12
+// @version      13
 // @run-at       document-start
 // @grant        none
-// @include      http://*
-// @include      https://*
+// @match        *://*/*
 // ==/UserScript==
 
 (function() {
