@@ -14,7 +14,8 @@
   window.Convermax.loaded = true; // for the legacy script version
   window.Convermax.devScriptEnabled = true;
 
-  new MutationObserver((_, observer) => {
+  document.addEventListener("DOMContentLoaded", function() {
+    new MutationObserver((_, observer) => {
     const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find(s => s.src.includes('search.min.js'));
 
     if ((scriptTag || localStorage["cm_inject-script"]) && !window.ConvermaxDevScriptInjected) {
@@ -48,6 +49,7 @@
     }
   })
     .observe(document.documentElement, { childList: true, subtree: true });
+});
 
   function injectScript(src) {
     const scriptTag = document.createElement('script');
