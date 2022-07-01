@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @version      15
+// @description  convermax-dev
+// @version      16
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -11,7 +12,6 @@
   'use strict';
 
   window.Convermax = window.Convermax || {};
-  window.Convermax.loaded = true; // for the legacy script version
   window.Convermax.devScriptEnabled = true;
 
   function createMutatuinObserver() {
@@ -35,8 +35,6 @@
 
         setTimeout(() => {
           observer.disconnect();
-
-          window.Convermax.loaded = false; // for the legacy script version
 
           console.log(
             '%cConvermax DEV UserScript',
