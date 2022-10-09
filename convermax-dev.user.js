@@ -1,12 +1,19 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @description  convermax-dev
-// @version      16
+// @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
+// @version      17
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
 // ==/UserScript==
+
+function log(message) {
+  console.log(
+    `%c${message}`,
+    'color: #B0D142; background: black; font-size: 24px; text-align: center; padding: 1rem; text-transform: uppercase; font-weight: bold; font-family: Roboto, Cantarell, sans-serif;',
+  );
+}
 
 (function () {
   'use strict';
@@ -16,7 +23,7 @@
 
   function createMutatuinObserver() {
     if (!document.documentElement) {
-      window.setTimeout(createMutatuinObserver, 200);
+      window.setTimeout(createMutatuinObserver, 100);
       return;
     }
 
@@ -36,15 +43,12 @@
         setTimeout(() => {
           observer.disconnect();
 
-          console.log(
-            '%cConvermax DEV UserScript',
-            'color: white; background: black; font-size: 44px; text-align: center; padding: 1rem; text-transform: uppercase; font-family: -apple-system, BlinkMacSystemFont, Roboto, Oxygen, , Cantarell, sans-serif;',
-          );
+          log('Convermax DEV UserScript');
 
           injectScript('https://localhost:3000/vendor.dev.bundle.js');
           injectScript('https://localhost:3000/templates.js');
           injectScript('https://localhost:3000/main.js');
-        }, 1000);
+        }, 0); // set it to 500 if script won't load
       }
 
       const styleTag = document.querySelector('link[href*="convermax.com"]');
@@ -59,8 +63,9 @@
   }
 
   createMutatuinObserver();
+
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'F9') {
+    if (e.key === '`' && e.altKey) {
       reloadCss();
     }
   });
@@ -73,6 +78,10 @@
   }
 
   function reloadCss() {
-    document.querySelector('[href="https://localhost:3000/search.css"]').href += '';
+    const link = document.querySelector('[href^="https://localhost:3000/search.css"]');
+    const href = new URL(link.href);
+    href.searchParams.set('force_reload', Date.now());
+    link.href = href;
+    log('CSS Reloaded');
   }
 })();
