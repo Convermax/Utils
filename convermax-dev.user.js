@@ -48,7 +48,7 @@ function log(message) {
           injectScript('https://localhost:3000/vendor.dev.bundle.js');
           injectScript('https://localhost:3000/templates.js');
           injectScript('https://localhost:3000/main.js');
-        }, 0); // set it to 500 if script won't load
+        }, 500);
       }
 
       const styleTag = document.querySelector('link[href*="convermax.com"]');
