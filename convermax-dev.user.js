@@ -34,6 +34,9 @@ function log(message) {
 
       if ((scriptTag || localStorage['cm_inject-script']) && !window.ConvermaxDevScriptInjected) {
         if (scriptTag) {
+          window.Convermax.devScriptStoreId = scriptTag
+            .getAttribute('src')
+            .match(/\/{2}(.+)\.myconvermax.com/)[1];
           scriptTag.src = '';
           scriptTag.remove();
         }
@@ -48,7 +51,7 @@ function log(message) {
           injectScript('https://localhost:3000/vendor.dev.bundle.js');
           injectScript('https://localhost:3000/templates.js');
           injectScript('https://localhost:3000/main.js');
-        }, 500);
+        }, 1500); // set it to 500 if script won't load
       }
 
       const styleTag = document.querySelector('link[href*="convermax.com"]');
