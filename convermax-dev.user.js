@@ -19,6 +19,7 @@ function log(message) {
   'use strict';
 
   window.Convermax = window.Convermax || {};
+  window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
 
   function createMutatuinObserver() {
@@ -32,11 +33,10 @@ function log(message) {
         s.src.includes('search.min.js'),
       );
 
+
       if ((scriptTag || localStorage['cm_inject-script']) && !window.ConvermaxDevScriptInjected) {
         if (scriptTag) {
-          window.Convermax.devScriptStoreId = scriptTag
-            .getAttribute('src')
-            .match(/\/{2}(.+)\.myconvermax.com/)[1];
+          window.Convermax.config.storeId = scriptTag.getAttribute('src').match(/\/{2}(.+)\.myconvermax.com/)[1];
           scriptTag.src = '';
           scriptTag.remove();
         }
@@ -51,7 +51,7 @@ function log(message) {
           injectScript('https://localhost:3000/vendor.dev.bundle.js');
           injectScript('https://localhost:3000/templates.js');
           injectScript('https://localhost:3000/main.js');
-        }, 1500); // set it to 500 if script won't load
+        }, 500); // set it to 1000 or higher if script won't load
       }
 
       const styleTag = document.querySelector('link[href*="convermax.com"]');
