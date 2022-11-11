@@ -2,7 +2,7 @@
 // @name         convermax-dev
 // @namespace    convermax-dev
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      18
+// @version      19
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -36,7 +36,7 @@ function log(message) {
 
       if ((scriptTag || localStorage['cm_inject-script']) && !window.ConvermaxDevScriptInjected) {
         if (scriptTag) {
-          window.Convermax.config.storeId = scriptTag.getAttribute('src').match(/\/{2}(.+)\.myconvermax.com/)[1];
+          window.Convermax.config.storeId = scriptTag.getAttribute('src').match(/\/{2}(.+)\.myconvermax.com/)?.[1];
           scriptTag.src = '';
           scriptTag.remove();
         }
