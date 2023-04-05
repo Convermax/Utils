@@ -68,7 +68,7 @@ function log(message) {
   createMutatuinObserver();
 
   window.addEventListener('keydown', (e) => {
-    if (e.key === '`' && e.altKey) {
+    if (e.keyCode === 192 && e.altKey) {
       reloadCss();
     }
   });
