@@ -38,6 +38,8 @@ function log(message) {
       } catch (ex) {}
 
       if ((liveScriptTag || injectConfigured) && !window.ConvermaxDevScriptInjected) {
+        log('Convermax DEV Script has been integrated');
+        
         if (liveScriptTag) {
           const src = liveScriptTag.getAttribute('src');
 
@@ -45,20 +47,14 @@ function log(message) {
             src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
             src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
 
-          liveScriptTag.src = '';
           liveScriptTag.remove();
         }
-
-        const stylesHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.css`;
-        const scriptHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.js`;
 
         setTimeout(() => {
           observer.disconnect();
 
-          log('Convermax DEV UserScript');
-
-          injectStyles(stylesHref);
-          injectScript(scriptHref);
+          injectStyles();
+          injectScript();
         }, 500); // set it to 1000 or higher if script won't load
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
@@ -74,10 +70,10 @@ function log(message) {
     }
   });
 
-  function injectStyles(href) {
+  function injectStyles() {
     const hostedStyleTag = document.createElement('link');
     hostedStyleTag.rel = 'stylesheet';
-    hostedStyleTag.href = href;
+    hostedStyleTag.href = `https://localhost:3000/${window.Convermax.config.storeId}/search.css`;
 
     const liveStyleTag = document.querySelector('link[href*="convermax.com"]');
     if (liveStyleTag) {
@@ -87,9 +83,9 @@ function log(message) {
     }
   }
 
-  function injectScript(href) {
+  function injectScript() {
     const hostedScriptTag = document.createElement('script');
-    hostedScriptTag.src = href;
+    hostedScriptTag.src = `https://localhost:3000/${window.Convermax.config.storeId}/search.js`;
     hostedScriptTag.async = false;
     hostedScriptTag.crossOrigin = 'anonymous';
 
