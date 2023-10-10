@@ -2,7 +2,7 @@
 // @name         convermax-dev
 // @namespace    convermax-dev
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      19.1
+// @version      20
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -17,6 +17,9 @@ function log(message) {
 
 (function () {
   'use strict';
+
+  const stylesHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.css`;
+  const scriptHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.js`;
 
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
@@ -33,10 +36,19 @@ function log(message) {
         s.src.includes('search.min.js'),
       );
 
+      const styleTag = document.querySelector('link[href*="convermax.com"]');
+      let injectConfigured = false;
 
-      if ((scriptTag || localStorage['cm_inject-script']) && !window.ConvermaxDevScriptInjected) {
+      try {
+        injectConfigured = localStorage['cm_inject-script'];
+      } catch (ex) {}
+
+      if ((scriptTag || injectConfigured) && !window.ConvermaxDevScriptInjected) {
         if (scriptTag) {
-          window.Convermax.config.storeId = scriptTag.getAttribute('src').match(/\/{2}(.+)\.myconvermax.com/)?.[1];
+          const src = scriptTag.getAttribute('src');
+          window.Convermax.config.storeId =
+            src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
+            src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
           scriptTag.src = '';
           scriptTag.remove();
         }
@@ -48,19 +60,9 @@ function log(message) {
 
           log('Convermax DEV UserScript');
 
-          injectScript('https://localhost:3000/vendor.dev.bundle.js');
-          injectScript('https://localhost:3000/templates.js');
-          injectScript('https://localhost:3000/main.js');
+          injectStyles();
+          injectScript();
         }, 500); // set it to 1000 or higher if script won't load
-      }
-
-      const styleTag = document.querySelector('link[href*="convermax.com"]');
-
-      if (styleTag) {
-        const localStyleTag = document.createElement('link');
-        localStyleTag.rel = 'stylesheet';
-        localStyleTag.href = 'https://localhost:3000/search.css';
-        styleTag.parentElement.replaceChild(localStyleTag, styleTag);
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
@@ -68,23 +70,38 @@ function log(message) {
   createMutatuinObserver();
 
   window.addEventListener('keydown', (e) => {
-    if (e.keyCode === 192 && e.altKey) {
+    const keyCode = e.code;
+
+    if (keyCode === 'Backquote' && keyCode === 'AltLeft') {
       reloadCss();
     }
   });
 
-  function injectScript(src) {
+  function injectStyles() {
+    const localStyleTag = document.createElement('link');
+    localStyleTag.rel = 'stylesheet';
+    localStyleTag.href = stylesHref;
+
+    if (styleTag) {
+      styleTag.parentElement.replaceChild(localStyleTag, styleTag);
+    } else {
+      document.body.appendChild(localStyleTag);
+    }
+  }
+
+  function injectScript() {
     const scriptTag = document.createElement('script');
-    scriptTag.src = src;
+    scriptTag.src = scriptHref;
     scriptTag.async = false;
+    scriptTag.crossOrigin = 'anonymous';
+
     document.body.appendChild(scriptTag);
   }
 
   function reloadCss() {
-    const link = document.querySelector('[href^="https://localhost:3000/search.css"]');
+    const link = document.querySelector(`[href^=${stylesHref}]`);
     const href = new URL(link.href);
     href.searchParams.set('force_reload', Date.now());
     link.href = href;
-    log('CSS Reloaded');
   }
 })();
