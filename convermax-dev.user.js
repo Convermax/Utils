@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         convermax-dev-build
-// @namespace    convermax-dev-build
+// @name         convermax-dev
+// @namespace    convermax-dev
 // @version      20
 // @run-at       document-start
 // @grant        none
