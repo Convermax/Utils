@@ -1,7 +1,6 @@
 // ==UserScript==
-// @name         convermax-dev
-// @namespace    convermax-dev
-// @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
+// @name         convermax-dev-build
+// @namespace    convermax-dev-build
 // @version      20
 // @run-at       document-start
 // @grant        none
@@ -18,9 +17,6 @@ function log(message) {
 (function () {
   'use strict';
 
-  const stylesHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.css`;
-  const scriptHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.js`;
-
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
@@ -32,36 +28,37 @@ function log(message) {
     }
 
     new MutationObserver((_, observer) => {
-      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
+      const liveScriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
         s.src.includes('search.min.js'),
       );
 
-      const styleTag = document.querySelector('link[href*="convermax.com"]');
       let injectConfigured = false;
-
       try {
         injectConfigured = localStorage['cm_inject-script'];
       } catch (ex) {}
 
-      if ((scriptTag || injectConfigured) && !window.ConvermaxDevScriptInjected) {
-        if (scriptTag) {
-          const src = scriptTag.getAttribute('src');
+      if ((liveScriptTag || injectConfigured) && !window.ConvermaxDevScriptInjected) {
+        if (liveScriptTag) {
+          const src = liveScriptTag.getAttribute('src');
+
           window.Convermax.config.storeId =
             src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
             src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
-          scriptTag.src = '';
-          scriptTag.remove();
+
+          liveScriptTag.src = '';
+          liveScriptTag.remove();
         }
 
-        window.ConvermaxDevScriptInjected = true;
+        const stylesHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.css`;
+        const scriptHref = `https://localhost:3000/${window.Convermax.config.storeId}/search.js`;
 
         setTimeout(() => {
           observer.disconnect();
 
           log('Convermax DEV UserScript');
 
-          injectStyles();
-          injectScript();
+          injectStyles(stylesHref);
+          injectScript(scriptHref);
         }, 500); // set it to 1000 or higher if script won't load
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
@@ -77,30 +74,31 @@ function log(message) {
     }
   });
 
-  function injectStyles() {
-    const localStyleTag = document.createElement('link');
-    localStyleTag.rel = 'stylesheet';
-    localStyleTag.href = stylesHref;
+  function injectStyles(href) {
+    const hostedStyleTag = document.createElement('link');
+    hostedStyleTag.rel = 'stylesheet';
+    hostedStyleTag.href = href;
 
-    const styleTag = document.querySelector('link[href*="convermax.com"]');
-    if (styleTag) {
-      styleTag.parentElement.replaceChild(localStyleTag, styleTag);
+    const liveStyleTag = document.querySelector('link[href*="convermax.com"]');
+    if (liveStyleTag) {
+      liveStyleTag.parentElement.replaceChild(hostedStyleTag, liveStyleTag);
     } else {
-      document.body.appendChild(localStyleTag);
+      document.body.appendChild(hostedStyleTag);
     }
   }
 
-  function injectScript() {
-    const scriptTag = document.createElement('script');
-    scriptTag.src = scriptHref;
-    scriptTag.async = false;
-    scriptTag.crossOrigin = 'anonymous';
+  function injectScript(href) {
+    const hostedScriptTag = document.createElement('script');
+    hostedScriptTag.src = href;
+    hostedScriptTag.async = false;
+    hostedScriptTag.crossOrigin = 'anonymous';
 
-    document.body.appendChild(scriptTag);
+    document.body.appendChild(hostedScriptTag);
+    window.ConvermaxDevScriptInjected = true;
   }
 
   function reloadCss() {
-    const link = document.querySelector(`[href^=${stylesHref}]`);
+    const link = document.querySelector(`[href^="https://localhost:3000/${window.Convermax.config.storeId}/search.js"]`);
     const href = new URL(link.href);
     href.searchParams.set('force_reload', Date.now());
     link.href = href;
