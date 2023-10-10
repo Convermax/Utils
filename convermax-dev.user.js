@@ -82,6 +82,7 @@ function log(message) {
     localStyleTag.rel = 'stylesheet';
     localStyleTag.href = stylesHref;
 
+    const styleTag = document.querySelector('link[href*="convermax.com"]');
     if (styleTag) {
       styleTag.parentElement.replaceChild(localStyleTag, styleTag);
     } else {
