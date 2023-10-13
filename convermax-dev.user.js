@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
+// @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @version      20
 // @run-at       document-start
 // @grant        none
