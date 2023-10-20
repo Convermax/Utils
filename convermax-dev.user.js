@@ -44,9 +44,11 @@ function log(message) {
         if (liveScriptTag) {
           const src = liveScriptTag.getAttribute('src');
 
-          window.Convermax.config.storeId =
-            src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
-            src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
+          if (!window.Convermax.config.storeId) {
+            window.Convermax.config.storeId =
+              src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
+              src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
+          }
 
           liveScriptTag.remove();
         }
