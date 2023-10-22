@@ -33,14 +33,15 @@ function log(message) {
         s.src.includes('search.min.js'),
       );
 
-      let injectConfigured = false;
+      let forceInjectStoreId = null;
       try {
-        injectConfigured = localStorage['cm_inject-script'];
+        forceInjectStoreId = localStorage['cm_inject-script'];
       } catch (ex) {}
 
-      if ((liveScriptTag || injectConfigured) && !window.ConvermaxDevScriptInjected) {
-        log('Convermax DEV Script has been integrated');
-        
+      if ((liveScriptTag || forceInjectStoreId) && !window.ConvermaxDevScriptInjected) {
+        window.ConvermaxDevScriptInjected = true;
+        log('Convermax DEV Script v2 has been integrated');
+
         if (liveScriptTag) {
           const src = liveScriptTag.getAttribute('src');
 
@@ -51,6 +52,10 @@ function log(message) {
           }
 
           liveScriptTag.remove();
+        }
+
+        if(!window.Convermax.config.storeId && forceInjectStoreId) {
+            window.Convermax.config.storeId = forceInjectStoreId
         }
 
         setTimeout(() => {
@@ -93,7 +98,6 @@ function log(message) {
     hostedScriptTag.crossOrigin = 'anonymous';
 
     document.body.appendChild(hostedScriptTag);
-    window.ConvermaxDevScriptInjected = true;
   }
 
   function reloadCss() {
