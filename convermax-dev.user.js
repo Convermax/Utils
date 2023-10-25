@@ -35,7 +35,11 @@ function log(message) {
 
       let forceInjectStoreId = null;
       try {
-        forceInjectStoreId = localStorage['cm_inject-script'];
+        const lsStoreId = localStorage['cm_inject-script'];
+
+        if (lsStoreId !== 'true') {
+          forceInjectStoreId = localStorage['cm_inject-script'];
+        }
       } catch (ex) {}
 
       if ((liveScriptTag || forceInjectStoreId) && !window.ConvermaxDevScriptInjected) {
@@ -54,8 +58,8 @@ function log(message) {
           liveScriptTag.remove();
         }
 
-        if(!window.Convermax.config.storeId && forceInjectStoreId) {
-            window.Convermax.config.storeId = forceInjectStoreId
+        if (!window.Convermax.config.storeId && forceInjectStoreId) {
+          window.Convermax.config.storeId = forceInjectStoreId
         }
 
         setTimeout(() => {
