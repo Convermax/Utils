@@ -21,6 +21,7 @@ function log(message) {
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
+  let storeId
 
   function createMutatuinObserver() {
     if (!document.documentElement) {
@@ -48,9 +49,9 @@ function log(message) {
 
         if (liveScriptTag) {
           const src = liveScriptTag.getAttribute('src');
-
-          if (!window.Convermax.config.storeId) {
-            window.Convermax.config.storeId =
+          storeId = window.Convermax.config.storeId
+          if (!storeId) {
+            storeId =
               src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
               src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
           }
@@ -58,15 +59,15 @@ function log(message) {
           liveScriptTag.remove();
         }
 
-        if (!window.Convermax.config.storeId && forceInjectStoreId) {
-          window.Convermax.config.storeId = forceInjectStoreId
+        if (!storeId && forceInjectStoreId) {
+          storeId = forceInjectStoreId
         }
 
         setTimeout(() => {
           observer.disconnect();
 
-          injectStyles();
-          injectScript();
+          injectStyles(storeId);
+          injectScript(storeId);
         }, 500); // set it to 1000 or higher if script won't load
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
@@ -78,14 +79,14 @@ function log(message) {
     const keyCode = e.code;
 
     if (keyCode === 'Backquote' && keyCode === 'AltLeft') {
-      reloadCss();
+      reloadCss(storeId);
     }
   });
 
-  function injectStyles() {
+  function injectStyles(storeId) {
     const hostedStyleTag = document.createElement('link');
     hostedStyleTag.rel = 'stylesheet';
-    hostedStyleTag.href = `https://localhost:3000/${window.Convermax.config.storeId}/search.css`;
+    hostedStyleTag.href = `https://localhost:3000/${storeId}/search.css`;
 
     const liveStyleTag = document.querySelector('link[href*="convermax.com"]');
     if (liveStyleTag) {
@@ -95,17 +96,17 @@ function log(message) {
     }
   }
 
-  function injectScript() {
+  function injectScript(storeId) {
     const hostedScriptTag = document.createElement('script');
-    hostedScriptTag.src = `https://localhost:3000/${window.Convermax.config.storeId}/search.js`;
+    hostedScriptTag.src = `https://localhost:3000/${storeId}/search.js`;
     hostedScriptTag.async = false;
     hostedScriptTag.crossOrigin = 'anonymous';
 
     document.body.appendChild(hostedScriptTag);
   }
 
-  function reloadCss() {
-    const link = document.querySelector(`[href^="https://localhost:3000/${window.Convermax.config.storeId}/search.js"]`);
+  function reloadCss(storeId) {
+    const link = document.querySelector(`[href^="https://localhost:3000/${storeId}/search.js"]`);
     const href = new URL(link.href);
     href.searchParams.set('force_reload', Date.now());
     link.href = href;
