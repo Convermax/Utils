@@ -29,9 +29,9 @@ function log(message) {
     }
 
     let inject
-    try{
-        inject = localStorage['cm_inject-script']
-    } catch(ex){}
+    try {
+      inject = localStorage['cm_inject-script']
+    } catch (ex) { }
 
     new MutationObserver((_, observer) => {
       const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
