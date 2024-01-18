@@ -2,7 +2,7 @@
 // @name         convermax-dev
 // @namespace    convermax-dev
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20
+// @version      20.2
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -21,7 +21,6 @@ function log(message) {
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
-  let storeId
 
   function createMutatuinObserver() {
     if (!document.documentElement) {
@@ -29,46 +28,48 @@ function log(message) {
       return;
     }
 
+    let inject
+    try{
+        inject = localStorage['cm_inject-script']
+    } catch(ex){}
+
     new MutationObserver((_, observer) => {
-      const liveScriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
-        s.src.includes('search.min.js'),
+      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
+        s.src.includes('search.js') || s.src.includes('search.min.js'),
       );
 
-      let forceInjectStoreId = null;
-      try {
-        const lsStoreId = localStorage['cm_inject-script'];
 
-        if (lsStoreId !== 'true') {
-          forceInjectStoreId = localStorage['cm_inject-script'];
-        }
-      } catch (ex) {}
+      if ((scriptTag || inject) && !window.ConvermaxDevScriptInjected) {
+        if (scriptTag) {
+          const src = scriptTag.getAttribute('src');
 
-      if ((liveScriptTag || forceInjectStoreId) && !window.ConvermaxDevScriptInjected) {
-        window.ConvermaxDevScriptInjected = true;
-        log('Convermax DEV Script v2 has been integrated');
-
-        if (liveScriptTag) {
-          const src = liveScriptTag.getAttribute('src');
-          storeId = window.Convermax.config.storeId
-          if (!storeId) {
-            storeId =
+          if (!window.Convermax.config.storeId) {
+            window.Convermax.config.storeId =
               src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
-              src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
+              src.match(/client.convermax.com\/static\/(.+)\/search(\.min)?\.js/)?.[1];
           }
 
-          liveScriptTag.remove();
+          scriptTag.remove();
         }
 
-        if (!storeId && forceInjectStoreId) {
-          storeId = forceInjectStoreId
-        }
+        window.ConvermaxDevScriptInjected = true;
 
         setTimeout(() => {
           observer.disconnect();
 
-          injectStyles(storeId);
-          injectScript(storeId);
+          log('Convermax DEV v20.2 UserScript');
+
+          injectScript('https://localhost:3000/temp/search.js');
         }, 500); // set it to 1000 or higher if script won't load
+      }
+
+      const styleTag = document.querySelector('link[href*="convermax.com"]');
+
+      if (styleTag) {
+        const localStyleTag = document.createElement('link');
+        localStyleTag.rel = 'stylesheet';
+        localStyleTag.href = 'https://localhost:3000/temp/search.css';
+        styleTag.parentElement.replaceChild(localStyleTag, styleTag);
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
@@ -79,36 +80,22 @@ function log(message) {
     const keyCode = e.code;
 
     if (keyCode === 'Backquote' && keyCode === 'AltLeft') {
-      reloadCss(storeId);
+      reloadCss();
     }
   });
 
-  function injectStyles(storeId) {
-    const hostedStyleTag = document.createElement('link');
-    hostedStyleTag.rel = 'stylesheet';
-    hostedStyleTag.href = `https://localhost:3000/${storeId}/search.css`;
-
-    const liveStyleTag = document.querySelector('link[href*="convermax.com"]');
-    if (liveStyleTag) {
-      liveStyleTag.parentElement.replaceChild(hostedStyleTag, liveStyleTag);
-    } else {
-      document.body.appendChild(hostedStyleTag);
-    }
+  function injectScript(src) {
+    const scriptTag = document.createElement('script');
+    scriptTag.src = src;
+    scriptTag.async = false;
+    document.body.appendChild(scriptTag);
   }
 
-  function injectScript(storeId) {
-    const hostedScriptTag = document.createElement('script');
-    hostedScriptTag.src = `https://localhost:3000/${storeId}/search.js`;
-    hostedScriptTag.async = false;
-    hostedScriptTag.crossOrigin = 'anonymous';
-
-    document.body.appendChild(hostedScriptTag);
-  }
-
-  function reloadCss(storeId) {
-    const link = document.querySelector(`[href^="https://localhost:3000/${storeId}/search.js"]`);
+  function reloadCss() {
+    const link = document.querySelector('[href^="https://localhost:3000/temp/search.css"]');
     const href = new URL(link.href);
     href.searchParams.set('force_reload', Date.now());
     link.href = href;
+    log('CSS Reloaded');
   }
 })();
