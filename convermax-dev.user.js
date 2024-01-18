@@ -2,7 +2,7 @@
 // @name         convermax-dev
 // @namespace    convermax-dev
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      19.3
+// @version      20.2
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -28,20 +28,25 @@ function log(message) {
       return;
     }
 
+    let inject
+    try {
+      inject = localStorage['cm_inject-script']
+    } catch (ex) { }
+
     new MutationObserver((_, observer) => {
       const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
-        s.src.includes('search.min.js'),
+        s.src.includes('search.js') || s.src.includes('search.min.js'),
       );
 
 
-      if ((scriptTag || localStorage['cm_inject-script']) && !window.ConvermaxDevScriptInjected) {
+      if ((scriptTag || inject) && !window.ConvermaxDevScriptInjected) {
         if (scriptTag) {
           const src = scriptTag.getAttribute('src');
 
           if (!window.Convermax.config.storeId) {
             window.Convermax.config.storeId =
               src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
-              src.match(/client.convermax.com\/static\/(.+)\/search(\.min)\.js/)?.[1];
+              src.match(/client.convermax.com\/static\/(.+)\/search(\.min)?\.js/)?.[1];
           }
 
           scriptTag.remove();
@@ -52,11 +57,9 @@ function log(message) {
         setTimeout(() => {
           observer.disconnect();
 
-          log('Convermax DEV UserScript');
+          log('Convermax DEV v20.2 UserScript');
 
-          injectScript('https://localhost:3000/vendor.dev.bundle.js');
-          injectScript('https://localhost:3000/templates.js');
-          injectScript('https://localhost:3000/main.js');
+          injectScript('https://localhost:3000/temp/search.js');
         }, 500); // set it to 1000 or higher if script won't load
       }
 
@@ -65,7 +68,7 @@ function log(message) {
       if (styleTag) {
         const localStyleTag = document.createElement('link');
         localStyleTag.rel = 'stylesheet';
-        localStyleTag.href = 'https://localhost:3000/search.css';
+        localStyleTag.href = 'https://localhost:3000/temp/search.css';
         styleTag.parentElement.replaceChild(localStyleTag, styleTag);
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
@@ -74,7 +77,9 @@ function log(message) {
   createMutatuinObserver();
 
   window.addEventListener('keydown', (e) => {
-    if (e.keyCode === 192 && e.altKey) {
+    const keyCode = e.code;
+
+    if (keyCode === 'Backquote' && keyCode === 'AltLeft') {
       reloadCss();
     }
   });
@@ -87,7 +92,7 @@ function log(message) {
   }
 
   function reloadCss() {
-    const link = document.querySelector('[href^="https://localhost:3000/search.css"]');
+    const link = document.querySelector('[href^="https://localhost:3000/temp/search.css"]');
     const href = new URL(link.href);
     href.searchParams.set('force_reload', Date.now());
     link.href = href;
