@@ -1,14 +1,17 @@
 // ==UserScript==
-// @name         convermax-dev
+// @name         Convermax DEV
 // @namespace    convermax-dev
 // @description  convermax-dev
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.3
+// @version      20.4
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
 // ==/UserScript==
+
+// eslint-disable-next-line no-undef, camelcase
+const scriptInfo = GM_info.script;
 
 function log(message) {
   // eslint-disable-next-line no-console
@@ -59,7 +62,7 @@ function log(message) {
         setTimeout(() => {
           observer.disconnect();
 
-          log('Convermax DEV v20.2 UserScript');
+          log(`${scriptInfo.name} v${scriptInfo.version} UserScript`);
 
           injectScript('https://localhost:3000/temp/search.js');
         }, 500); // set it to 1000 or higher if script won't load
