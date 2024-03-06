@@ -1,6 +1,8 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
+// @description    convermax-dev
+// @downloadURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @version      20.2
 // @run-at       document-start
@@ -9,6 +11,7 @@
 // ==/UserScript==
 
 function log(message) {
+  // eslint-disable-next-line no-console
   console.log(
     `%c${message}`,
     'color: #B0D142; background: black; font-size: 24px; text-align: center; padding: 1rem; text-transform: uppercase; font-weight: bold; font-family: Roboto, Cantarell, sans-serif;',
@@ -23,21 +26,20 @@ function log(message) {
   window.Convermax.devScriptEnabled = true;
 
   function createMutatuinObserver() {
-    if (!document.documentElement) {
+    if (!document.body) {
       window.setTimeout(createMutatuinObserver, 100);
       return;
     }
 
-    let inject
+    let inject;
     try {
-      inject = localStorage['cm_inject-script']
-    } catch (ex) { }
+      inject = localStorage['cm_inject-script'];
+    } catch (ex) {}
 
     new MutationObserver((_, observer) => {
-      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
-        s.src.includes('search.js') || s.src.includes('search.min.js'),
+      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find(
+        (s) => s.src.includes('search.js') || s.src.includes('search.min.js'),
       );
-
 
       if ((scriptTag || inject) && !window.ConvermaxDevScriptInjected) {
         if (scriptTag) {
