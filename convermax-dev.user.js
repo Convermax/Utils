@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         convermax-dev
 // @namespace    convermax-dev
-// @description    convermax-dev
-// @downloadURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
+// @description  convermax-dev
+// @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.2
+// @version      20.3
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
