@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.3.1
+// @version      0.4.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -10,6 +10,8 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
+// @grant        GM_getValue
+// @grant        GM_setValue
 // @grant        unsafeWindow
 // @sandbox      JavaScript
 // ==/UserScript==
@@ -27,7 +29,7 @@ function registerAdminMenuCommand() {
           active: true,
         });
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registred at menu`);
+      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
   } else if (window.unsafeWindow?.BCData) {
     const productId = document.querySelector('input[name=product_id]')?.value;
@@ -41,7 +43,7 @@ function registerAdminMenuCommand() {
           active: true,
         });
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registred at menu`);
+      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
   }
 }
@@ -58,7 +60,7 @@ function registerFitmentsMenuCommand() {
         );
       });
       console.log(
-        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitement chart link registred at menu`,
+        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
       );
     }
   } else if (window.unsafeWindow?.Convermax) {
@@ -71,7 +73,7 @@ function registerFitmentsMenuCommand() {
         );
       });
       console.log(
-        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitement chart link registred at menu`,
+        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
       );
     }
   }
@@ -81,20 +83,49 @@ function fixNoAccessToShopifyAdmin() {
   const url = window.location.href;
   const storeId = url.replace('https://admin.shopify.com/store/', '');
   const isAdminLogin = url.startsWith('https://admin.shopify.com/store/') && !storeId?.match(/\//g)?.length;
-  const isNotAllowed = document
+  const isNotAllowed = !!document
     .querySelector(
-      '#app > div.Polaris-LegacyCard > div > div > div > div.Polaris-Box > div > div.Polaris-Box > span',
+      '#app .Polaris-LegacyCard .Polaris-Box .Polaris-EmptyState__ImageContainer + .Polaris-Box span.Polaris-Text--root.Polaris-Text--bodySm',
     )
     ?.innerText?.includes("doesn't have permission to view this page");
+
   if (isAdminLogin && isNotAllowed) {
+    GM_setValue('fixShopifyAdminStartedAt', Date.now());
     window.location.replace(`https://partners.shopify.com/201897/stores?search_value=${storeId}`);
+  }
+}
+
+function fixNoStoreAtShopifyPartners() {
+  if (Date.now() - GM_getValue('fixShopifyAdminStartedAt', 0) > 30 * 1000) {
+    return;
+  }
+
+  const url = window.location.href;
+  const isPartnersSearch = url.startsWith('https://partners.shopify.com/201897/stores?search_value=');
+  const isNoResults = !!document
+    .querySelector(
+      '#AppFrameMain .Polaris-ResourceList__EmptySearchResultWrapper .Polaris-Text--root.Polaris-Text--headingLg',
+    )
+    ?.innerText?.includes('No stores found');
+  const isTabSelected = url.includes('tab=');
+  const Results = document.querySelectorAll(
+    '#AppFrameMain .Polaris-ResourceList .Polaris-ResourceItem__ListItem',
+  );
+
+  if (isPartnersSearch && isNoResults && !isTabSelected) {
+    window.location.replace(`${url}&tab=inactive`);
+  } else if (isPartnersSearch && !isTabSelected && [...Results].length === 1) {
+    Results[0]
+      .querySelector('form[action^="/201897/stores/"][action$="/login_managed"] button[type="submit"]')
+      .click();
   }
 }
 
 (function () {
   'use strict';
 
-  registerFitmentsMenuCommand();
-  registerAdminMenuCommand();
+  setTimeout(registerFitmentsMenuCommand, 1000);
+  setTimeout(registerAdminMenuCommand, 1000);
   setTimeout(fixNoAccessToShopifyAdmin, 1000);
+  setTimeout(fixNoStoreAtShopifyPartners, 2000);
 })();
