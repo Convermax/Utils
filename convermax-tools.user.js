@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.4.0
+// @version      0.4.1
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -19,12 +19,16 @@
 
 const scriptInfo = GM_info.script;
 
-function registerAdminMenuCommand() {
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function registerPlatformAdminMenuCommand() {
   if (window.unsafeWindow?.Shopify) {
     const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
 
     if (page?.pageType === 'product' || page?.pageType === 'collection') {
-      GM_registerMenuCommand('Open at Shopify admin', function () {
+      GM_registerMenuCommand(`${capitalizeFirstLetter(page?.pageType)} at Shopify admin`, function () {
         GM_openInTab(`${window.location.origin}/admin/${page.pageType}s/${page.resourceId}`, {
           active: true,
         });
@@ -38,7 +42,7 @@ function registerAdminMenuCommand() {
       ?.href?.split('s-')[1];
 
     if (productId && storeId) {
-      GM_registerMenuCommand('Open at BigCommerce admin', function () {
+      GM_registerMenuCommand('Product at BigCommerce admin', function () {
         GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/edit/${productId}`, {
           active: true,
         });
@@ -53,7 +57,7 @@ function registerFitmentsMenuCommand() {
     const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
 
     if (page?.pageType === 'product') {
-      GM_registerMenuCommand('Open Fitment chart', function () {
+      GM_registerMenuCommand('Fitment chart', function () {
         GM_openInTab(
           `${window.location.origin}/admin/apps/year-make-model-fitment-search/product_fitments?bypassAppUpdate=true&id=${page.resourceId}&shop=${window.unsafeWindow?.Shopify?.shop}`,
           { active: true },
@@ -66,7 +70,7 @@ function registerFitmentsMenuCommand() {
   } else if (window.unsafeWindow?.Convermax) {
     const poductId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
     if (poductId) {
-      GM_registerMenuCommand('Open Fitment chart', function () {
+      GM_registerMenuCommand('Fitment chart', function () {
         GM_openInTab(
           `https://${window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId}.myconvermax.com/ymm/fitments.json?productId=${poductId}&includeSource=true`,
           { active: true },
@@ -76,6 +80,20 @@ function registerFitmentsMenuCommand() {
         `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
       );
     }
+  }
+}
+
+function registerConvermaxAdminMenuCommand() {
+  if (window.unsafeWindow?.Convermax) {
+    GM_registerMenuCommand('Store status at Convermax admin', function () {
+      GM_openInTab(
+        `https://myconvermax.com/${window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId}/status`,
+        { active: true },
+      );
+    });
+    console.log(
+      `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Convermax admin link registred at menu`,
+    );
   }
 }
 
@@ -124,8 +142,9 @@ function fixNoStoreAtShopifyPartners() {
 (function () {
   'use strict';
 
+  setTimeout(registerConvermaxAdminMenuCommand, 1000);
   setTimeout(registerFitmentsMenuCommand, 1000);
-  setTimeout(registerAdminMenuCommand, 1000);
+  setTimeout(registerPlatformAdminMenuCommand, 1000);
   setTimeout(fixNoAccessToShopifyAdmin, 1000);
   setTimeout(fixNoStoreAtShopifyPartners, 2000);
 })();
