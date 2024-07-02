@@ -25,6 +25,12 @@ function capitalizeFirstLetter(string) {
 
 function registerPlatformAdminMenuCommand() {
   if (window.unsafeWindow?.Shopify) {
+    GM_registerMenuCommand(`Shopify admin - Themes`, function () {
+      GM_openInTab(`${window.location.origin}/admin/themes`, {
+        active: true,
+      });
+    });
+
     const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
 
     if (page?.pageType === 'product' || page?.pageType === 'collection') {
@@ -36,12 +42,21 @@ function registerPlatformAdminMenuCommand() {
       console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
   } else if (window.unsafeWindow?.BCData) {
-    const productId = document.querySelector('input[name=product_id]')?.value;
     const storeId = document
       .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
       ?.href?.split('s-')[1];
 
-    if (productId && storeId) {
+    if (storeId) {
+      GM_registerMenuCommand(`BigCommerce admin`, function () {
+        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, {
+          active: true,
+        });
+      });
+    }
+
+    const productId = document.querySelector('input[name=product_id]')?.value;
+
+    if (storeId && productId) {
       GM_registerMenuCommand('Product at BigCommerce admin', function () {
         GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/edit/${productId}`, {
           active: true,
