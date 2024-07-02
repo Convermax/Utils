@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.4.1
+// @version      0.4.2
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -85,15 +85,15 @@ function registerFitmentsMenuCommand() {
 
 function registerConvermaxAdminMenuCommand() {
   if (window.unsafeWindow?.Convermax) {
-    GM_registerMenuCommand('Store status at Convermax admin', function () {
-      GM_openInTab(
-        `https://myconvermax.com/${window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId}/status`,
-        { active: true },
+    const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId;
+    if (storeId) {
+      GM_registerMenuCommand('Store status at Convermax admin', function () {
+        GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
+      });
+      console.log(
+        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Convermax admin link registred at menu`,
       );
-    });
-    console.log(
-      `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Convermax admin link registred at menu`,
-    );
+    }
   }
 }
 
