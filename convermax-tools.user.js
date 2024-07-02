@@ -97,24 +97,34 @@ function registerConvermaxAdminMenuCommand() {
   }
 }
 
+function isShopifyAdminFixTimeoutExpired() {
+  return Date.now() - GM_getValue('fixShopifyAdminStartedAt', 0) > 30 * 1000;
+}
+
 function fixNoAccessToShopifyAdmin() {
   const url = window.location.href;
-  const storeId = url.replace('https://admin.shopify.com/store/', '');
-  const isAdminLogin = url.startsWith('https://admin.shopify.com/store/') && !storeId?.match(/\//g)?.length;
+  const path = url.replace('https://admin.shopify.com/store/', '');
+  const storeId = path.replace(/\/.*/, '');
+  const isAdminLogin = url.startsWith('https://admin.shopify.com/store/');
   const isNotAllowed = !!document
     .querySelector(
       '#app .Polaris-LegacyCard .Polaris-Box .Polaris-EmptyState__ImageContainer + .Polaris-Box span.Polaris-Text--root.Polaris-Text--bodySm',
     )
     ?.innerText?.includes("doesn't have permission to view this page");
+  const redirectPath = GM_getValue('fixShopifyAdminLocation', '');
 
   if (isAdminLogin && isNotAllowed) {
     GM_setValue('fixShopifyAdminStartedAt', Date.now());
+    GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
     window.location.replace(`https://partners.shopify.com/201897/stores?search_value=${storeId}`);
+  } else if (isAdminLogin && !isShopifyAdminFixTimeoutExpired() && redirectPath) {
+    GM_setValue('fixShopifyAdminLocation', '');
+    window.location.replace(`https://admin.shopify.com/store/${storeId}${redirectPath}`);
   }
 }
 
 function fixNoStoreAtShopifyPartners() {
-  if (Date.now() - GM_getValue('fixShopifyAdminStartedAt', 0) > 30 * 1000) {
+  if (isShopifyAdminFixTimeoutExpired()) {
     return;
   }
 
@@ -133,9 +143,9 @@ function fixNoStoreAtShopifyPartners() {
   if (isPartnersSearch && isNoResults && !isTabSelected) {
     window.location.replace(`${url}&tab=inactive`);
   } else if (isPartnersSearch && !isTabSelected && [...Results].length === 1) {
-    Results[0]
-      .querySelector('form[action^="/201897/stores/"][action$="/login_managed"] button[type="submit"]')
-      .click();
+    const form = Results[0].querySelector('form[action^="/201897/stores/"][action$="/login_managed"]');
+    form.removeAttribute('target');
+    form.querySelector('button[type="submit"]').click();
   }
 }
 
