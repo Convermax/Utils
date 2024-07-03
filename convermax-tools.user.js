@@ -12,6 +12,7 @@
 // @grant        GM_openInTab
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @sandbox      JavaScript
 // ==/UserScript==
@@ -21,6 +22,18 @@ const scriptInfo = GM_info.script;
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+function checkUrl(url, callback) {
+  GM_xmlhttpRequest({
+    method: 'HEAD',
+    url: url,
+    onload: function(response) {
+      callback(response.status);
+    },
+    onerror: function() {
+      callback(0);
+    }
+  });
 }
 
 function registerPlatformAdminMenuCommand() {
@@ -46,10 +59,17 @@ function registerPlatformAdminMenuCommand() {
       .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
       ?.href?.split('s-')[1];
 
+    const firstURL = `https://store-${storeId}.mybigcommerce.com/manage/storefront-manager/my-themes`;
+    const secondURL = `https://store-${storeId}.mybigcommerce.com/manage/channel/1/my-themes`;
+    
     if (storeId) {
-      GM_registerMenuCommand(`BigCommerce admin`, function () {
-        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, {
-          active: true,
+      GM_registerMenuCommand(`BigCommerce admin - Themes`, function () {
+        checkUrl(firstURL, function(status) {
+          if (status === 200) {
+            GM_openInTab(firstURL, { active: true });
+          } else {
+            GM_openInTab(secondURL, { active: true });
+          }
         });
       });
     }
