@@ -4,7 +4,7 @@
 // @description  convermax-dev
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.4
+// @version      20.5
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -41,7 +41,7 @@ function log(message) {
 
     new MutationObserver((_, observer) => {
       const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find(
-        (s) => s.src.includes('search.js') || s.src.includes('search.min.js'),
+        (s) => /\/search(-[^.]+)?(\.(min\.)?js)$/.test(s.src),
       );
 
       if ((scriptTag || inject) && !window.ConvermaxDevScriptInjected) {
@@ -51,7 +51,7 @@ function log(message) {
           if (!window.Convermax.config.storeId) {
             window.Convermax.config.storeId =
               src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
-              src.match(/client.convermax.com\/static\/(.+)\/search(\.min)?\.js/)?.[1];
+              src.match(/client.convermax.com\/static\/(.+)\/search(-[^.]+)?(\.min)?\.js/)?.[1];
           }
 
           scriptTag.remove();
