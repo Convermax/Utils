@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.4.3
+// @version      0.5.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -68,26 +68,12 @@ function registerPlatformAdminMenuCommand() {
 }
 
 function registerFitmentsMenuCommand() {
-  if (window.unsafeWindow?.Shopify) {
-    const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-
-    if (page?.pageType === 'product') {
-      GM_registerMenuCommand('Fitment chart', function () {
-        GM_openInTab(
-          `${window.location.origin}/admin/apps/year-make-model-fitment-search/product_fitments?bypassAppUpdate=true&id=${page.resourceId}&shop=${window.unsafeWindow?.Shopify?.shop}`,
-          { active: true },
-        );
-      });
-      console.log(
-        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
-      );
-    }
-  } else if (window.unsafeWindow?.Convermax) {
+  if (window.unsafeWindow?.Convermax) {
     const poductId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
     if (poductId) {
       GM_registerMenuCommand('Fitment chart', function () {
         GM_openInTab(
-          `https://${window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId}.myconvermax.com/ymm/fitments.json?productId=${poductId}&includeSource=true`,
+          `https://${window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId}.myconvermax.com/ymm/fitments.html?productId=${poductId}&includeSource=true`,
           { active: true },
         );
       });
