@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.5.0
+// @version      0.5.1
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -68,33 +68,34 @@ function registerPlatformAdminMenuCommand() {
 }
 
 function registerFitmentsMenuCommand() {
-  if (window.unsafeWindow?.Convermax) {
-    const poductId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-    if (poductId) {
-      GM_registerMenuCommand('Fitment chart', function () {
-        GM_openInTab(
-          `https://${window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId}.myconvermax.com/ymm/fitments.html?productId=${poductId}&includeSource=true`,
-          { active: true },
-        );
-      });
-      console.log(
-        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
+  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+    ?.replace('https://', '')
+    .replace('.myconvermax.com', '');
+  const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+  if (storeId && productId) {
+    GM_registerMenuCommand('Fitment chart', function () {
+      GM_openInTab(
+        `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
+        { active: true },
       );
-    }
+    });
+    console.log(
+      `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
+    );
   }
 }
 
 function registerConvermaxAdminMenuCommand() {
-  if (window.unsafeWindow?.Convermax) {
-    const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId;
-    if (storeId) {
-      GM_registerMenuCommand('Store status at Convermax admin', function () {
-        GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
-      });
-      console.log(
-        `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Convermax admin link registred at menu`,
-      );
-    }
+  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+    ?.replace('https://', '')
+    .replace('.myconvermax.com', '');
+  if (storeId) {
+    GM_registerMenuCommand('Store status at Convermax admin', function () {
+      GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
+    });
+    console.log(
+      `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Convermax admin link registered at menu`,
+    );
   }
 }
 
@@ -150,12 +151,36 @@ function fixNoStoreAtShopifyPartners() {
   }
 }
 
+function ensureContextIsSet(getContext, timeout) {
+  const start = Date.now();
+  return new Promise(waitForContext);
+
+  function waitForContext(resolve, reject) {
+    const context = getContext();
+    if (context) {
+      resolve(context);
+    } else if (timeout && Date.now() - start >= timeout) {
+      reject(() => null);
+    } else {
+      setTimeout(waitForContext.bind(this, resolve, reject), 30);
+    }
+  }
+}
+
 (function () {
   'use strict';
 
-  setTimeout(registerConvermaxAdminMenuCommand, 1000);
-  setTimeout(registerFitmentsMenuCommand, 1000);
-  setTimeout(registerPlatformAdminMenuCommand, 1000);
+  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
+    registerConvermaxAdminMenuCommand();
+    registerFitmentsMenuCommand();
+  });
+
+  ensureContextIsSet(() => window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData, 10000).then(
+    function () {
+      registerPlatformAdminMenuCommand();
+    },
+  );
+
   setTimeout(fixNoAccessToShopifyAdmin, 1000);
   setTimeout(fixNoStoreAtShopifyPartners, 2000);
 })();
