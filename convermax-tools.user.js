@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.5.2
+// @version      0.5.3
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -153,7 +153,7 @@ function fixNoStoreAtShopifyPartners() {
 
 function ensureContextIsSet(getContext, timeout) {
   const start = Date.now();
-  return new Promise(waitForContext);
+  return new Promise(waitForContext).catch(() => {});
 
   function waitForContext(resolve, reject) {
     const context = getContext();
@@ -170,16 +170,13 @@ function ensureContextIsSet(getContext, timeout) {
 (function () {
   'use strict';
 
-  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000)
-    .catch(() => {})
-    .then(function () {
-      registerConvermaxAdminMenuCommand();
-      registerFitmentsMenuCommand();
-    });
+  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
+    registerConvermaxAdminMenuCommand();
+    registerFitmentsMenuCommand();
+  });
 
-  ensureContextIsSet(() => window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData, 10000)
-    .catch(() => {})
-    .then(function () {
+  ensureContextIsSet(() => window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData, 10000).then(
+    function () {
       registerPlatformAdminMenuCommand();
     });
 
