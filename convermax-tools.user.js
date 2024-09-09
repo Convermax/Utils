@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.5.3
+// @version      0.5.4
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -70,7 +70,8 @@ function registerPlatformAdminMenuCommand() {
 function registerFitmentsMenuCommand() {
   const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
     ?.replace('https://', '')
-    .replace('.myconvermax.com', '');
+    ?.replace('.myconvermax.com', '')
+    ?.replace('client.convermax.com/','');
   const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
   if (storeId && productId) {
     GM_registerMenuCommand('Fitment chart', function () {
