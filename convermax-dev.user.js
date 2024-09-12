@@ -4,10 +4,11 @@
 // @description  convermax-dev
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.6
+// @version      20.7
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
+// @exclude      *://*convermax.com/*
 // ==/UserScript==
 
 // eslint-disable-next-line no-undef, camelcase
@@ -28,9 +29,9 @@ function log(message) {
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
 
-  function createMutatuinObserver() {
+  function createMutationObserver() {
     if (!document.body) {
-      window.setTimeout(createMutatuinObserver, 100);
+      window.setTimeout(createMutationObserver, 100);
       return;
     }
 
@@ -79,7 +80,7 @@ function log(message) {
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  createMutatuinObserver();
+  createMutationObserver();
 
   window.addEventListener('keydown', (e) => {
     const keyCode = e.code;
