@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.5.4
+// @version      0.5.5
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -58,7 +58,7 @@ function registerPlatformAdminMenuCommand() {
 
     if (storeId && productId) {
       GM_registerMenuCommand('Product at BigCommerce admin', function () {
-        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/edit/${productId}`, {
+        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
           active: true,
         });
       });
