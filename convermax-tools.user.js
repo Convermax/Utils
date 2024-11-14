@@ -64,6 +64,49 @@ function registerPlatformAdminMenuCommand() {
       });
       console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
+  } else if (window.unsafeWindow?.woocommerce_params) {
+    GM_registerMenuCommand(`WooCommerce admin`, function () {
+      GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, {
+        active: true,
+      });
+    });
+    const productId =
+      window.unsafeWindow?.cm_product?.[0] ??
+      window.unsafeWindow?.document.querySelector('button[name="add-to-cart"]')?.value;
+    if (productId) {
+      GM_registerMenuCommand('Product at WooCommerce admin', function () {
+        GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
+          active: true,
+        });
+      });
+      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
+    }
+    const categoryHandle = window.location.pathname.includes('/product-category/')
+      ? window.location.pathname.replace('/product-category/', '')
+      : '';
+    if (categoryHandle) {
+      GM_registerMenuCommand('Category products at WooCommerce admin', function () {
+        GM_openInTab(
+          `${window.location.origin}/wp-admin/edit.php?product_cat=${categoryHandle}&post_type=product`,
+          {
+            active: true,
+          },
+        );
+      });
+      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
+    }
+    const categoryName = window.unsafeWindow?.cm_category;
+    if (categoryName) {
+      GM_registerMenuCommand('Category settings at WooCommerce admin (see 1st)', function () {
+        GM_openInTab(
+          `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
+          {
+            active: true,
+          },
+        );
+      });
+      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
+    }
   }
 }
 
@@ -182,11 +225,13 @@ function ensureContextIsSet(getContext, timeout) {
     registerFitmentsMenuCommand();
   });
 
-  ensureContextIsSet(() => window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData, 10000).then(
-    function () {
-      registerPlatformAdminMenuCommand();
-    },
-  );
+  ensureContextIsSet(
+    () =>
+      window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData || window.unsafeWindow?.woocommerce_params,
+    10000,
+  ).then(function () {
+    registerPlatformAdminMenuCommand();
+  });
 
   const url = window.location.href;
   if (url.startsWith('https://admin.shopify.com/store/')) {
