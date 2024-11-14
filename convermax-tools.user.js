@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.5.5
+// @version      0.5.6
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -71,7 +71,7 @@ function registerFitmentsMenuCommand() {
   const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
     ?.replace('https://', '')
     ?.replace('.myconvermax.com', '')
-    ?.replace('client.convermax.com/','');
+    ?.replace('client.convermax.com/', '');
   const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
   if (storeId && productId) {
     GM_registerMenuCommand('Fitment chart', function () {
@@ -120,15 +120,18 @@ function fixNoAccessToShopifyAdmin() {
     GM_setValue('fixShopifyAdminStartedAt', Date.now());
     GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
     window.location.replace(`https://partners.shopify.com/201897/stores?search_value=${storeId}`);
+    return true;
   } else if (isAdminLogin && !isShopifyAdminFixTimeoutExpired() && redirectPath) {
     GM_setValue('fixShopifyAdminLocation', '');
     window.location.replace(`https://admin.shopify.com/store/${storeId}${redirectPath}`);
+    return true;
   }
+  return false;
 }
 
 function fixNoStoreAtShopifyPartners() {
   if (isShopifyAdminFixTimeoutExpired()) {
-    return;
+    return false;
   }
 
   const url = window.location.href;
@@ -145,11 +148,14 @@ function fixNoStoreAtShopifyPartners() {
 
   if (isPartnersSearch && isNoResults && !isTabSelected) {
     window.location.replace(`${url}&tab=inactive`);
+    return true;
   } else if (isPartnersSearch && !isTabSelected && [...Results].length === 1) {
     const form = Results[0].querySelector('form[action^="/201897/stores/"][action$="/login_managed"]');
     form.removeAttribute('target');
     form.querySelector('button[type="submit"]').click();
+    return true;
   }
+  return false;
 }
 
 function ensureContextIsSet(getContext, timeout) {
@@ -179,8 +185,14 @@ function ensureContextIsSet(getContext, timeout) {
   ensureContextIsSet(() => window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData, 10000).then(
     function () {
       registerPlatformAdminMenuCommand();
-    });
+    },
+  );
 
-  setTimeout(fixNoAccessToShopifyAdmin, 1000);
-  setTimeout(fixNoStoreAtShopifyPartners, 2000);
+  const url = window.location.href;
+  if (url.startsWith('https://admin.shopify.com/store/')) {
+    ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
+  }
+  if (url.startsWith('https://partners.shopify.com/201897/stores?search_value=')) {
+    ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
+  }
 })();
