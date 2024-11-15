@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.5.6
+// @version      0.6.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -16,8 +16,6 @@
 // @sandbox      JavaScript
 // ==/UserScript==
 /* eslint-disable no-console, no-undef, camelcase */
-
-const scriptInfo = GM_info.script;
 
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -39,7 +37,6 @@ function registerPlatformAdminMenuCommand() {
           active: true,
         });
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
   } else if (window.unsafeWindow?.BCData) {
     const storeId = document
@@ -62,7 +59,6 @@ function registerPlatformAdminMenuCommand() {
           active: true,
         });
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
   } else if (window.unsafeWindow?.woocommerce_params) {
     GM_registerMenuCommand(`WooCommerce admin`, function () {
@@ -79,7 +75,6 @@ function registerPlatformAdminMenuCommand() {
           active: true,
         });
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
     const categoryHandle = window.location.pathname.includes('/product-category/')
       ? window.location.pathname.replace('/product-category/', '')
@@ -93,7 +88,6 @@ function registerPlatformAdminMenuCommand() {
           },
         );
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
     const categoryName = window.unsafeWindow?.cm_category;
     if (categoryName) {
@@ -105,7 +99,6 @@ function registerPlatformAdminMenuCommand() {
           },
         );
       });
-      console.log(`[${scriptInfo.name} v${scriptInfo.version} UserScript]: Admin link registered at menu`);
     }
   }
 }
@@ -123,9 +116,6 @@ function registerFitmentsMenuCommand() {
         { active: true },
       );
     });
-    console.log(
-      `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Fitment chart link registered at menu`,
-    );
   }
 }
 
@@ -137,9 +127,6 @@ function registerConvermaxAdminMenuCommand() {
     GM_registerMenuCommand('Store status at Convermax admin', function () {
       GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
     });
-    console.log(
-      `[${scriptInfo.name} v${scriptInfo.version} UserScript]: Convermax admin link registered at menu`,
-    );
   }
 }
 
