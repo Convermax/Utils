@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.6.0
+// @version      0.6.1
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -188,6 +188,12 @@ function fixNoStoreAtShopifyPartners() {
   return false;
 }
 
+function bypassShopifyPassword(){
+  if(window.location.href.includes('.myshopify.com/password')){
+    window.location.replace(`${window.location.origin}/admin/themes`);
+  }
+}
+
 function ensureContextIsSet(getContext, timeout) {
   const start = Date.now();
   return new Promise(waitForContext).catch(() => {});
@@ -206,6 +212,8 @@ function ensureContextIsSet(getContext, timeout) {
 
 (function () {
   'use strict';
+
+  bypassShopifyPassword();
 
   ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
     registerConvermaxAdminMenuCommand();
