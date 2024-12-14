@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.6.1
+// @version      0.7.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -109,12 +109,30 @@ function registerFitmentsMenuCommand() {
     ?.replace('.myconvermax.com', '')
     ?.replace('client.convermax.com/', '');
   const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-  if (storeId && productId) {
+  const isFitmentSearch =
+    !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
+
+  if (storeId && isFitmentSearch && productId) {
     GM_registerMenuCommand('Fitment chart', function () {
       GM_openInTab(
         `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
         { active: true },
       );
+    });
+  }
+
+  if (storeId && isFitmentSearch) {
+    GM_registerMenuCommand('Vehicle Info', function () {
+      if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
+        const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
+        for (const [key, value] of Object.entries(window.unsafeWindow?.Convermax?.getVehicle())) {
+          url.searchParams.set(key, value);
+        }
+
+        GM_openInTab(url.href, { active: true });
+      } else {
+        alert('Convermax Tools: No vehicle selected!');
+      }
     });
   }
 }
@@ -188,8 +206,8 @@ function fixNoStoreAtShopifyPartners() {
   return false;
 }
 
-function bypassShopifyPassword(){
-  if(window.location.href.includes('.myshopify.com/password')){
+function bypassShopifyPassword() {
+  if (window.location.href.includes('.myshopify.com/password')) {
     window.location.replace(`${window.location.origin}/admin/themes`);
   }
 }
