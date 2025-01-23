@@ -23,7 +23,7 @@ function capitalizeFirstLetter(string) {
 
 function registerPlatformAdminMenuCommand() {
   if (window.unsafeWindow?.Shopify) {
-    GM_registerMenuCommand(`Shopify admin - Themes`, function () {
+    GM_registerMenuCommand(`Shopify Themes`, function () {
       GM_openInTab(`${window.location.origin}/admin/themes`, {
         active: true,
       });
@@ -31,8 +31,8 @@ function registerPlatformAdminMenuCommand() {
 
     const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
 
-    if (page?.pageType === 'product' || page?.pageType === 'collection') {
-      GM_registerMenuCommand(`${capitalizeFirstLetter(page?.pageType)} at Shopify admin`, function () {
+    if (page?.pageType === 'Product' || page?.pageType === 'Collection') {
+      GM_registerMenuCommand(`Shopify ${capitalizeFirstLetter(page?.pageType)}`, function () {
         GM_openInTab(`${window.location.origin}/admin/${page.pageType}s/${page.resourceId}`, {
           active: true,
         });
@@ -44,7 +44,7 @@ function registerPlatformAdminMenuCommand() {
       ?.href?.split('s-')[1];
 
     if (storeId) {
-      GM_registerMenuCommand(`BigCommerce admin`, function () {
+      GM_registerMenuCommand(`BigCommerce Admin`, function () {
         GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, {
           active: true,
         });
@@ -54,14 +54,14 @@ function registerPlatformAdminMenuCommand() {
     const productId = document.querySelector('input[name=product_id]')?.value;
 
     if (storeId && productId) {
-      GM_registerMenuCommand('Product at BigCommerce admin', function () {
+      GM_registerMenuCommand('BigCommerce Product', function () {
         GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
           active: true,
         });
       });
     }
   } else if (window.unsafeWindow?.woocommerce_params) {
-    GM_registerMenuCommand(`WooCommerce admin`, function () {
+    GM_registerMenuCommand(`WooCommerce Admin`, function () {
       GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, {
         active: true,
       });
@@ -70,7 +70,7 @@ function registerPlatformAdminMenuCommand() {
       window.unsafeWindow?.cm_product?.[0] ??
       window.unsafeWindow?.document.querySelector('button[name="add-to-cart"]')?.value;
     if (productId) {
-      GM_registerMenuCommand('Product at WooCommerce admin', function () {
+      GM_registerMenuCommand('WooCommerce Product', function () {
         GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
           active: true,
         });
@@ -80,7 +80,7 @@ function registerPlatformAdminMenuCommand() {
       ? window.location.pathname.replace('/product-category/', '')
       : '';
     if (categoryHandle) {
-      GM_registerMenuCommand('Category products at WooCommerce admin', function () {
+      GM_registerMenuCommand('WooCommerce Category Products', function () {
         GM_openInTab(
           `${window.location.origin}/wp-admin/edit.php?product_cat=${categoryHandle}&post_type=product`,
           {
@@ -91,7 +91,7 @@ function registerPlatformAdminMenuCommand() {
     }
     const categoryName = window.unsafeWindow?.cm_category;
     if (categoryName) {
-      GM_registerMenuCommand('Category settings at WooCommerce admin (see 1st)', function () {
+      GM_registerMenuCommand('WooCommerce Category (see 1st)', function () {
         GM_openInTab(
           `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
           {
@@ -113,7 +113,7 @@ function registerFitmentsMenuCommand() {
     !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
 
   if (storeId && isFitmentSearch && productId) {
-    GM_registerMenuCommand('Fitment chart', function () {
+    GM_registerMenuCommand('Fitment Chart', function () {
       GM_openInTab(
         `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
         { active: true },
@@ -142,7 +142,7 @@ function registerConvermaxAdminMenuCommand() {
     ?.replace('https://', '')
     .replace('.myconvermax.com', '');
   if (storeId) {
-    GM_registerMenuCommand('Store status at Convermax admin', function () {
+    GM_registerMenuCommand('Convermax Admin', function () {
       GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
     });
   }
