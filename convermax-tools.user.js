@@ -227,6 +227,92 @@ function ensureContextIsSet(getContext, timeout) {
     }
   }
 }
+function registerHotkeys() {
+  document.addEventListener('keydown', function(e) {
+    if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+      const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+        ?.replace('https://', '')
+        ?.replace('.myconvermax.com', '')
+        ?.replace('client.convermax.com/', '');
+      
+      switch (e.key) {
+        case '1': // Convermax admin
+          if (storeId) {
+            e.preventDefault();
+            GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
+          }
+          break;
+
+        case '2': // Platform admin
+          e.preventDefault();
+          if (window.unsafeWindow?.Shopify) {
+            GM_openInTab(`${window.location.origin}/admin/themes`, { active: true });
+          } else if (window.unsafeWindow?.BCData) {
+            const bcStoreId = document.querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
+            if (bcStoreId) {
+              GM_openInTab(`https://store-${bcStoreId}.mybigcommerce.com/manage`, { active: true });
+            }
+          } else if (window.unsafeWindow?.woocommerce_params) {
+            GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true });
+          }
+          break;
+
+        case '3': // Edit product
+          e.preventDefault();
+          if (window.unsafeWindow?.Shopify) {
+            const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
+            if (page?.pageType === 'product') {
+              GM_openInTab(`${window.location.origin}/admin/products/${page.resourceId}`, { active: true });
+            }
+          } else if (window.unsafeWindow?.BCData) {
+            const bcStoreId = document.querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
+            const productId = document.querySelector('input[name=product_id]')?.value;
+            if (bcStoreId && productId) {
+              GM_openInTab(`https://store-${bcStoreId}.mybigcommerce.com/manage/products/${productId}/edit`, { active: true });
+            }
+          } else if (window.unsafeWindow?.woocommerce_params) {
+            const productId = window.unsafeWindow?.cm_product?.[0] ?? window.unsafeWindow?.document.querySelector('button[name="add-to-cart"]')?.value;
+            if (productId) {
+              GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, { active: true });
+            }
+          }
+          break;
+
+        case '4': // Edit collection
+          if (window.unsafeWindow?.Shopify) {
+            const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
+            if (page?.pageType === 'collection') {
+              e.preventDefault();
+              GM_openInTab(`${window.location.origin}/admin/collections/${page.resourceId}`, { active: true });
+            }
+          }
+          break;
+
+        case '5': // Fitment chart
+          {
+            const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+            const isFitmentSearch = !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
+            if (storeId && isFitmentSearch && productId) {
+              e.preventDefault();
+              GM_openInTab(`https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`, { active: true });
+            }
+          }
+          break;
+          
+        case '6': // Vehicle info
+          if (storeId && window.unsafeWindow?.Convermax?.isVehicleSelected?.()) {
+            e.preventDefault();
+            const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
+            for (const [key, value] of Object.entries(window.unsafeWindow?.Convermax?.getVehicle())) {
+              url.searchParams.set(key, value);
+            }
+            GM_openInTab(url.href, { active: true });
+          }
+          break;
+      }
+    }
+  });
+}
 
 (function () {
   'use strict';
@@ -236,6 +322,7 @@ function ensureContextIsSet(getContext, timeout) {
   ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
     registerConvermaxAdminMenuCommand();
     registerFitmentsMenuCommand();
+    registerHotkeys();
   });
 
   ensureContextIsSet(
