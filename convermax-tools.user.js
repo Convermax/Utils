@@ -8,6 +8,7 @@
 // @author       Miha_xXx
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
+// @grant        GM_setClipboard 
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
 // @grant        GM_getValue
@@ -351,11 +352,20 @@ function ensureContextIsSet(getContext, timeout) {
 }
 function registerHotkeys() {
   document.addEventListener('keydown', (e) => {
+    const platform = getPlatform();
+    const storeId = getStoreId(platform);
+    const productId = getProductId();
+    
+    if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key === '`') {
+      if (storeId) {
+        e.preventDefault();
+        GM_setClipboard(storeId);
+      } else {
+        alert('Store ID is not defined');
+      }
+    }
+    
     if (e.altKey && !e.ctrlKey && !e.shiftKey) {
-      const platform = getPlatform();
-      const storeId = getStoreId(platform);
-      const productId = getProductId();
-
       switch (e.key) {
         case '1': // Convermax admin
           if (storeId) {
