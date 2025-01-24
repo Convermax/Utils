@@ -17,135 +17,245 @@
 // ==/UserScript==
 /* eslint-disable no-console, no-undef, camelcase */
 
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+function getPlatform(platform = null) {
+  if (platform === 'shopify' || window.unsafeWindow?.Shopify) {
+    return 'shopify';
+  } else if (platform === 'bigcommerce' || window.unsafeWindow?.BCData) {
+    return 'bigcommerce';
+  } else if (platform === 'woocommerce' || window.unsafeWindow?.woocommerce_params) {
+    return 'woocommerce';
+  } else if (platform === 'convermax') {
+    return 'convermax';
+  }
+  return null;
 }
 
-function registerPlatformAdminMenuCommand() {
-  if (window.unsafeWindow?.Shopify) {
-    GM_registerMenuCommand(`Shopify Themes`, function () {
-      GM_openInTab(`${window.location.origin}/admin/themes`, {
-        active: true,
-      });
-    });
-
-    const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-
-    if (page?.pageType === 'Product' || page?.pageType === 'Collection') {
-      GM_registerMenuCommand(`Shopify ${capitalizeFirstLetter(page?.pageType)}`, function () {
-        GM_openInTab(`${window.location.origin}/admin/${page.pageType}s/${page.resourceId}`, {
-          active: true,
-        });
-      });
-    }
-  } else if (window.unsafeWindow?.BCData) {
-    const storeId = document
-      .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-      ?.href?.split('s-')[1];
-
-    if (storeId) {
-      GM_registerMenuCommand(`BigCommerce Admin`, function () {
-        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, {
-          active: true,
-        });
-      });
-    }
-
-    const productId = document.querySelector('input[name=product_id]')?.value;
-
-    if (storeId && productId) {
-      GM_registerMenuCommand('BigCommerce Product', function () {
-        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
-          active: true,
-        });
-      });
-    }
-  } else if (window.unsafeWindow?.woocommerce_params) {
-    GM_registerMenuCommand(`WooCommerce Admin`, function () {
-      GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, {
-        active: true,
-      });
-    });
-    const productId =
-      window.unsafeWindow?.cm_product?.[0] ??
-      window.unsafeWindow?.document.querySelector('button[name="add-to-cart"]')?.value;
-    if (productId) {
-      GM_registerMenuCommand('WooCommerce Product', function () {
-        GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
-          active: true,
-        });
-      });
-    }
-    const categoryHandle = window.location.pathname.includes('/product-category/')
-      ? window.location.pathname.replace('/product-category/', '')
-      : '';
-    if (categoryHandle) {
-      GM_registerMenuCommand('WooCommerce Category Products', function () {
-        GM_openInTab(
-          `${window.location.origin}/wp-admin/edit.php?product_cat=${categoryHandle}&post_type=product`,
-          {
-            active: true,
-          },
-        );
-      });
-    }
-    const categoryName = window.unsafeWindow?.cm_category;
-    if (categoryName) {
-      GM_registerMenuCommand('WooCommerce Category (see 1st)', function () {
-        GM_openInTab(
-          `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
-          {
-            active: true,
-          },
-        );
-      });
-    }
+function getStoreId(platform = null) {
+  if (platform === 'bigcommerce' || window.unsafeWindow?.BCData) {
+    return document.querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
+        ?.href?.split('s-')[1];
+  } else {
+    const url = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl;
+    return url?.replace('https://', '').replace('.myconvermax.com', '').replace('client.convermax.com/', '');
   }
 }
+function getProductId(platform = null) {
+  const platformHandlers = {
+    shopify: () => window.unsafeWindow?.ShopifyAnalytics?.meta?.page?.resourceId,
+    bigcommerce: () => document.querySelector('input[name=product_id]')?.value,
+    woocommerce: () => window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value,
+    convermax: () => window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId,
+  };
 
-function registerFitmentsMenuCommand() {
-  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-    ?.replace('https://', '')
-    ?.replace('.myconvermax.com', '')
-    ?.replace('client.convermax.com/', '');
-  const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-  const isFitmentSearch =
-    !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
+  return platformHandlers[getPlatform(platform)]?.() || null;
+}
 
-  if (storeId && isFitmentSearch && productId) {
-    GM_registerMenuCommand('Fitment Chart', function () {
-      GM_openInTab(
-        `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
-        { active: true },
-      );
-    });
-  }
-
-  if (storeId && isFitmentSearch) {
-    GM_registerMenuCommand('Vehicle Info', function () {
-      if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
+const actions = {
+  shopify: {
+    admin: {
+      label: 'Shopify Themes',
+      action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true }),
+    },
+    product: {
+      label: 'Shopify Product',
+      action: (resourceId) =>
+          GM_openInTab(`${window.location.origin}/admin/products/${resourceId}`, { active: true }),
+    },
+    collection: {
+      label: 'Shopify Collection',
+      action: (resourceId) =>
+          GM_openInTab(`${window.location.origin}/admin/collections/${resourceId}`, { active: true }),
+    },
+  },
+  bigcommerce: {
+    admin: {
+      label: 'BigCommerce Admin',
+      action: (storeId) => GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, { active: true }),
+    },
+    product: {
+      label: 'BigCommerce Product',
+      action: (storeId, productId) =>
+          GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
+            active: true,
+          }),
+    },
+  },
+  woocommerce: {
+    admin: {
+      label: 'WooCommerce Admin',
+      action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
+    },
+    product: {
+      label: 'WooCommerce Product',
+      action: (productId) =>
+          GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
+            active: true,
+          }),
+    },
+    categoryProducts: {
+      label: 'WooCommerce Category Products',
+      action: (categoryHandle) =>
+          GM_openInTab(
+              `${window.location.origin}/wp-admin/edit.php?product_cat=${categoryHandle}&post_type=product`,
+              { active: true },
+          ),
+    },
+    category: {
+      label: 'WooCommerce Category (see 1st)',
+      action: (categoryName) =>
+          GM_openInTab(
+              `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
+              { active: true },
+          ),
+    },
+  },
+  convermax: {
+    admin: {
+      label: 'Convermax Admin',
+      action: (storeId) => GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true }),
+    },
+  },
+  fitment: {
+    fitmentChart: {
+      label: 'Fitment Chart',
+      action: (storeId, productId) =>
+          GM_openInTab(
+              `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
+              { active: true },
+          ),
+    },
+    vehicleInfo: {
+      label: 'Vehicle Info',
+      action: (storeId, vehicle) => {
         const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
-        for (const [key, value] of Object.entries(window.unsafeWindow?.Convermax?.getVehicle())) {
+        for (const [key, value] of Object.entries(vehicle)) {
           url.searchParams.set(key, value);
         }
-
         GM_openInTab(url.href, { active: true });
-      } else {
-        alert('Convermax Tools: No vehicle selected!');
-      }
-    });
-  }
+      },
+    },
+  },
+}
+
+function registerMenuCommands(commands) {
+  commands.forEach(({ label, action }) => GM_registerMenuCommand(label, action));
 }
 
 function registerConvermaxAdminMenuCommand() {
-  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-    ?.replace('https://', '')
-    .replace('.myconvermax.com', '');
+  const storeId = getStoreId();
   if (storeId) {
-    GM_registerMenuCommand('Convermax Admin', function () {
-      GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
+    registerMenuCommands([
+      {
+        label: actions.convermax.admin.label,
+        action: () => actions.convermax.admin.action(storeId),
+      },
+    ]);
+  }
+}
+
+function registerPlatformAdminMenuCommand() {
+  const platform = getPlatform();
+  const storeId = getStoreId();
+  const productId = getProductId();
+  const commands = [];
+
+  const platformHandlers = {
+    shopify: () => {
+      commands.push(actions.shopify.themes);
+
+      const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
+      if (page?.pageType === 'product') {
+        commands.push({
+          ...actions.shopify.product,
+          action: () => actions.shopify.product.action(page.resourceId),
+        });
+      } else if (page?.pageType === 'collection') {
+        commands.push({
+          ...actions.shopify.collection,
+          action: () => actions.shopify.collection.action(page.resourceId),
+        });
+      }
+    },
+
+    bigcommerce: () => {
+      if (storeId) {
+        commands.push({
+          ...actions.bigcommerce.admin,
+          action: () => actions.bigcommerce.admin.action(storeId),
+        });
+
+        if (productId) {
+          commands.push({
+            ...actions.bigcommerce.product,
+            action: () => actions.bigcommerce.product.action(storeId, productId),
+          });
+        }
+      }
+    },
+
+    woocommerce: () => {
+      commands.push(actions.woocommerce.admin);
+
+      if (productId) {
+        commands.push({
+          ...actions.woocommerce.product,
+          action: () => actions.woocommerce.product.action(productId),
+        });
+      }
+
+      const categoryHandle = window.location.pathname.includes('/product-category/')
+          ? window.location.pathname.replace('/product-category/', '')
+          : '';
+      if (categoryHandle) {
+        commands.push({
+          ...actions.woocommerce.categoryProducts,
+          action: () => actions.woocommerce.categoryProducts.action(categoryHandle),
+        });
+      }
+
+      const categoryName = window.unsafeWindow?.cm_category;
+      if (categoryName) {
+        commands.push({
+          ...actions.woocommerce.categorySettings,
+          action: () => actions.woocommerce.categorySettings.action(categoryName),
+        });
+      }
+    },
+  };
+
+  platformHandlers[platform]?.();
+
+  registerMenuCommands(commands);
+}
+
+function registerFitmentsMenuCommand() {
+  const storeId = getStoreId();
+  const productId = getProductId("convermax")
+  const isFitmentSearch = !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
+  const commands = [];
+
+  if (!storeId || !isFitmentSearch) return;
+
+  if (productId) {
+    commands.push({
+      label: actions.fitment.fitmentChart.label,
+      action: () => actions.fitment.fitmentChart.action(storeId, productId),
     });
   }
+
+  commands.push({
+    label: actions.fitment.vehicleInfo.label,
+    action: () => {
+      if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
+        const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
+        actions.fitment.vehicleInfo.action(storeId, vehicle);
+      } else {
+        alert('Convermax Tools: No vehicle selected!');
+      }
+    },
+  });
+
+  registerMenuCommands(commands);
 }
 
 function isShopifyAdminFixTimeoutExpired() {
@@ -228,85 +338,70 @@ function ensureContextIsSet(getContext, timeout) {
   }
 }
 function registerHotkeys() {
-  document.addEventListener('keydown', function(e) {
+  document.addEventListener('keydown', (e) => {
     if (e.altKey && !e.ctrlKey && !e.shiftKey) {
-      const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-        ?.replace('https://', '')
-        ?.replace('.myconvermax.com', '')
-        ?.replace('client.convermax.com/', '');
-      
+      const platform = getPlatform();
+      const storeId = getStoreId(platform);
+      const productId = getProductId();
+
       switch (e.key) {
         case '1': // Convermax admin
           if (storeId) {
             e.preventDefault();
-            GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
+            actions.convermax.admin.action(storeId);
           }
           break;
 
         case '2': // Platform admin
           e.preventDefault();
-          if (window.unsafeWindow?.Shopify) {
-            GM_openInTab(`${window.location.origin}/admin/themes`, { active: true });
-          } else if (window.unsafeWindow?.BCData) {
-            const bcStoreId = document.querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
-            if (bcStoreId) {
-              GM_openInTab(`https://store-${bcStoreId}.mybigcommerce.com/manage`, { active: true });
-            }
-          } else if (window.unsafeWindow?.woocommerce_params) {
-            GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true });
+          if (platform === 'shopify') {
+            actions.shopify.admin.action();
+          } else if (platform === 'bigcommerce') {
+            actions.bigcommerce.admin.action(storeId);
+          }
+          else if (platform === 'woocommerce') {
+            actions.woocommerce.admin.action();
           }
           break;
 
         case '3': // Edit product
           e.preventDefault();
-          if (window.unsafeWindow?.Shopify) {
+          if (platform === 'shopify') {
             const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
             if (page?.pageType === 'product') {
-              GM_openInTab(`${window.location.origin}/admin/products/${page.resourceId}`, { active: true });
+              actions.shopify.product.action(page.resourceId);
             }
-          } else if (window.unsafeWindow?.BCData) {
-            const bcStoreId = document.querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
-            const productId = document.querySelector('input[name=product_id]')?.value;
-            if (bcStoreId && productId) {
-              GM_openInTab(`https://store-${bcStoreId}.mybigcommerce.com/manage/products/${productId}/edit`, { active: true });
+          } else if (platform === 'bigcommerce') {
+            if (storeId && productId) {
+              actions.bigcommerce.product.action(storeId, productId);
             }
-          } else if (window.unsafeWindow?.woocommerce_params) {
-            const productId = window.unsafeWindow?.cm_product?.[0] ?? window.unsafeWindow?.document.querySelector('button[name="add-to-cart"]')?.value;
-            if (productId) {
-              GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, { active: true });
-            }
+          } else if (platform === 'woocommerce' && productId) {
+            actions.woocommerce.product.action(productId);
           }
           break;
 
         case '4': // Edit collection
-          if (window.unsafeWindow?.Shopify) {
+          if (platform === 'shopify') {
             const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
             if (page?.pageType === 'collection') {
               e.preventDefault();
-              GM_openInTab(`${window.location.origin}/admin/collections/${page.resourceId}`, { active: true });
+              actions.shopify.collection.action(page.resourceId);
             }
           }
           break;
 
         case '5': // Fitment chart
-          {
-            const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-            const isFitmentSearch = !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
-            if (storeId && isFitmentSearch && productId) {
-              e.preventDefault();
-              GM_openInTab(`https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`, { active: true });
-            }
+          if (storeId && productId) {
+            e.preventDefault();
+            actions.fitment.fitmentChart.action(storeId, productId);
           }
           break;
-          
+
         case '6': // Vehicle info
           if (storeId && window.unsafeWindow?.Convermax?.isVehicleSelected?.()) {
             e.preventDefault();
-            const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
-            for (const [key, value] of Object.entries(window.unsafeWindow?.Convermax?.getVehicle())) {
-              url.searchParams.set(key, value);
-            }
-            GM_openInTab(url.href, { active: true });
+            const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
+            actions.fitment.vehicleInfo.action(storeId, vehicle);
           }
           break;
       }
