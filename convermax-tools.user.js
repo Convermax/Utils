@@ -79,6 +79,13 @@ const actions = {
             active: true,
           }),
     },
+    categories: {
+      label: 'BigCommerce Categories',
+      action: (storeId) =>
+          GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/categories`, {
+            active: true,
+          }),
+    },
   },
   woocommerce: {
     admin: {
@@ -183,6 +190,11 @@ function registerPlatformAdminMenuCommand() {
           ...actions.bigcommerce.admin,
           action: () => actions.bigcommerce.admin.action(storeId),
         });
+        
+        commands.push({
+          ...actions.bigcommerce.categories,
+          action: () => actions.bigcommerce.categories.action(storeId),
+        })
 
         if (productId) {
           commands.push({
@@ -371,10 +383,8 @@ function registerHotkeys() {
             if (page?.pageType === 'product') {
               actions.shopify.product.action(page.resourceId);
             }
-          } else if (platform === 'bigcommerce') {
-            if (storeId && productId) {
-              actions.bigcommerce.product.action(storeId, productId);
-            }
+          } else if (platform === 'bigcommerce' && storeId && productId) {
+            actions.bigcommerce.product.action(storeId, productId);
           } else if (platform === 'woocommerce' && productId) {
             actions.woocommerce.product.action(productId);
           }
@@ -386,6 +396,13 @@ function registerHotkeys() {
             if (page?.pageType === 'collection') {
               e.preventDefault();
               actions.shopify.collection.action(page.resourceId);
+            }
+          } else if (platform === 'bigcommerce' && storeId) {
+            actions.bigcommerce.categories.action(storeId);
+          } else if (platform === 'woocommerce') {
+            const categoryName = window.unsafeWindow?.cm_category;
+            if (categoryName) {
+              actions.woocommerce.category.action(categoryName);
             }
           }
           break;
