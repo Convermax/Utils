@@ -31,9 +31,7 @@ function getPlatform() {
 
 function getStoreId() {
   const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId;
-  if (storeId) {
-    return storeId;
-  }
+  if (storeId) return storeId;
 
   const platform = getPlatform();
   if (!platform) return null;
@@ -49,15 +47,16 @@ function getStoreId() {
 
 function getProductId() {
   const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-  if (productId) {
-    return productId;
-  }
+  if (productId) return productId;
 
   const platform = getPlatform();
   if (!platform) return null;
 
   const platformHandlers = {
-    shopify: () => window.unsafeWindow?.ShopifyAnalytics?.meta?.page?.resourceId || null,
+    shopify: () => {
+      const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
+      return page?.pageType === 'product' ? page.resourceId || null : null;
+    },
     bigcommerce: () => document.querySelector('input[name=product_id]')?.value || null,
     woocommerce: () => window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value || null,
   }
@@ -184,12 +183,12 @@ function registerPlatformAdminMenuCommand() {
       commands.push(actions.shopify.admin);
 
       const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-      if (page?.pageType === 'product') {
+      if (page?.pageType === 'product' && page.resourceId) {
         commands.push({
           ...actions.shopify.product,
           action: () => actions.shopify.product.action(page.resourceId),
         });
-      } else if (page?.pageType === 'collection') {
+      } else if (page?.pageType === 'collection' && page.resourceId) {
         commands.push({
           ...actions.shopify.collection,
           action: () => actions.shopify.collection.action(page.resourceId),
@@ -402,7 +401,7 @@ function registerHotkeys() {
           e.preventDefault();
           if (platform === 'shopify') {
             const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-            if (page?.pageType === 'product') {
+            if (page?.pageType === 'product' && page.resourceId) {
               actions.shopify.product.action(page.resourceId);
             }
           } else if (platform === 'bigcommerce' && storeId && productId) {
@@ -415,7 +414,7 @@ function registerHotkeys() {
         case '4': // Edit collection
           if (platform === 'shopify') {
             const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-            if (page?.pageType === 'collection') {
+            if (page?.pageType === 'collection' && page.resourceId) {
               e.preventDefault();
               actions.shopify.collection.action(page.resourceId);
             }
