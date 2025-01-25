@@ -389,7 +389,7 @@ function registerHotkeys() {
           e.preventDefault();
           if (platform === 'shopify') {
             actions.shopify.admin.action();
-          } else if (platform === 'bigcommerce') {
+          } else if (platform === 'bigcommerce' && storeId) {
             actions.bigcommerce.admin.action(storeId);
           }
           else if (platform === 'woocommerce') {
@@ -397,45 +397,39 @@ function registerHotkeys() {
           }
           break;
 
-        case '3': // Edit product
+        case '3': // Edit product/collection
           e.preventDefault();
           if (platform === 'shopify') {
             const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
             if (page?.pageType === 'product' && page.resourceId) {
               actions.shopify.product.action(page.resourceId);
-            }
-          } else if (platform === 'bigcommerce' && storeId && productId) {
-            actions.bigcommerce.product.action(storeId, productId);
-          } else if (platform === 'woocommerce' && productId) {
-            actions.woocommerce.product.action(productId);
-          }
-          break;
-
-        case '4': // Edit collection
-          if (platform === 'shopify') {
-            const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-            if (page?.pageType === 'collection' && page.resourceId) {
-              e.preventDefault();
+            } else if (page?.pageType === 'collection' && page.resourceId) {
               actions.shopify.collection.action(page.resourceId);
             }
           } else if (platform === 'bigcommerce' && storeId) {
-            actions.bigcommerce.categories.action(storeId);
+            if (productId) {
+              actions.bigcommerce.product.action(storeId, productId);
+            } else {
+              actions.bigcommerce.categories.action(storeId);
+            }
           } else if (platform === 'woocommerce') {
             const categoryName = window.unsafeWindow?.cm_category;
-            if (categoryName) {
+            if (productId) {
+              actions.woocommerce.product.action(productId);
+            } else if (categoryName) {
               actions.woocommerce.category.action(categoryName);
             }
           }
           break;
 
-        case '5': // Fitment chart
+        case '4': // Fitment chart
           if (storeId && productId) {
             e.preventDefault();
             actions.fitment.fitmentChart.action(storeId, productId);
           }
           break;
 
-        case '6': // Vehicle info
+        case '5': // Vehicle info
           if (storeId && window.unsafeWindow?.Convermax?.isVehicleSelected?.()) {
             e.preventDefault();
             const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
