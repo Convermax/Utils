@@ -8,7 +8,7 @@
 // @author       Miha_xXx
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
-// @grant        GM_setClipboard 
+// @grant        GM_setClipboard
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
 // @grant        GM_getValue
@@ -21,28 +21,32 @@
 function getPlatform() {
   if (window.unsafeWindow?.Shopify) {
     return 'shopify';
-  } else if (window.unsafeWindow?.BCData) {
+  }
+  if (window.unsafeWindow?.BCData) {
     return 'bigcommerce';
-  } else if (window.unsafeWindow?.woocommerce_params) {
+  }
+  if (window.unsafeWindow?.woocommerce_params) {
     return 'woocommerce';
   }
   return null;
 }
 
 function getStoreId() {
-  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId;
-  if (storeId) return storeId;
-
+  let storeId;
   const platform = getPlatform();
-  if (!platform) return null;
-
-  const platformHandlers = {
-    shopify: () => window.Shopify?.shop?.replace('.myshopify.com', '') || null,
-    bigcommerce: () => document
-        .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-        ?.href?.split('s-')[1] || null,
+  if (platform === 'shopify') {
+    storeId = window.Shopify?.shop?.replace('.myshopify.com', '') || null;
   }
-  return platformHandlers[platform]?.() || null;
+  if (platform === 'bigcommerce') {
+    storeId = document
+        .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
+        ?.href?.split('s-')[1] || null;
+  }
+  
+  if (!storeId) {
+    storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId || null;
+  }
+  return storeId;
 }
 
 function getProductId() {
@@ -361,12 +365,13 @@ function ensureContextIsSet(getContext, timeout) {
     }
   }
 }
+
 function registerHotkeys() {
   document.addEventListener('keydown', (e) => {
     const platform = getPlatform();
     const storeId = getStoreId();
     const productId = getProductId();
-    
+
     if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key === '`') {
       if (storeId) {
         e.preventDefault();
@@ -375,7 +380,7 @@ function registerHotkeys() {
         alert('Store ID is not defined');
       }
     }
-    
+
     if (e.altKey && !e.ctrlKey && !e.shiftKey) {
       switch (e.key) {
         case '1': // Convermax admin
