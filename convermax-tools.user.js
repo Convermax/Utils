@@ -31,22 +31,21 @@ function getPlatform() {
   return null;
 }
 
-function getStoreId() {
-  let storeId;
-  const platform = getPlatform();
-  if (platform === 'shopify') {
-    storeId = window.Shopify?.shop?.replace('.myshopify.com', '') || null;
-  }
-  if (platform === 'bigcommerce') {
-    storeId = document
-        .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-        ?.href?.split('s-')[1] || null;
+function getStoreId(getNativeStoreId = null) {
+  if (getNativeStoreId) {
+    const platform = getPlatform();
+    if (platform === 'shopify') {
+      return window.Shopify?.shop?.replace('.myshopify.com', '') || null;
+    }
+    if (platform === 'bigcommerce') {
+      return document
+          .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
+          ?.href?.split('s-')[1] || null;
+    }
+    return null;
   }
   
-  if (!storeId) {
-    storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId || null;
-  }
-  return storeId;
+  return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId || null;
 }
 
 function getProductId() {
@@ -178,7 +177,6 @@ function registerConvermaxAdminMenuCommand() {
 }
 
 function registerPlatformAdminMenuCommand() {
-  const storeId = getStoreId();
   const productId = getProductId();
   const commands = [];
 
@@ -201,22 +199,23 @@ function registerPlatformAdminMenuCommand() {
     },
 
     bigcommerce: () => {
-      if (storeId) {
+      const nativeStoreId = getStoreId(true);
+      if (nativeStoreId) {
         commands.push({
           ...actions.bigcommerce.admin,
-          action: () => actions.bigcommerce.admin.action(storeId),
+          action: () => actions.bigcommerce.admin.action(nativeStoreId),
         });
 
         if (productId) {
           commands.push({
             ...actions.bigcommerce.product,
-            action: () => actions.bigcommerce.product.action(storeId, productId),
+            action: () => actions.bigcommerce.product.action(nativeStoreId, productId),
           });
         }
 
         commands.push({
           ...actions.bigcommerce.categories,
-          action: () => actions.bigcommerce.categories.action(storeId),
+          action: () => actions.bigcommerce.categories.action(nativeStoreId),
         })
       }
     },
