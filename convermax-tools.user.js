@@ -70,40 +70,40 @@ function registerMenuCommands(commands) {
 const actions = {
   convermax: {
     admin: {
-      label: 'Convermax Admin [Ctrl + 1]',
+      label: 'Convermax Admin [Alt + 1]',
       action: (storeId) => GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true }),
     },
   },
   shopify: {
     admin: {
-      label: 'Shopify Themes [Ctrl + 2]',
+      label: 'Shopify Themes [Alt + 2]',
       action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true }),
     },
     product: {
-      label: 'Shopify Product [Ctrl + 3]',
+      label: 'Shopify Product [Alt + 3]',
       action: (resourceId) =>
           GM_openInTab(`${window.location.origin}/admin/products/${resourceId}`, { active: true }),
     },
     collection: {
-      label: 'Shopify Collection [Ctrl + 3]',
+      label: 'Shopify Collection [Alt + 3]',
       action: (resourceId) =>
           GM_openInTab(`${window.location.origin}/admin/collections/${resourceId}`, { active: true }),
     },
   },
   bigcommerce: {
     admin: {
-      label: 'BigCommerce Admin [Ctrl + 2]',
+      label: 'BigCommerce Admin [Alt + 2]',
       action: (storeId) => GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, { active: true }),
     },
     product: {
-      label: 'BigCommerce Product [Ctrl + 3]',
+      label: 'BigCommerce Product [Alt + 3]',
       action: (storeId, productId) =>
           GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
             active: true,
           }),
     },
     categories: {
-      label: 'BigCommerce Categories [Ctrl + 3]',
+      label: 'BigCommerce Categories [Alt + 3]',
       action: (storeId) =>
           GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/categories`, {
             active: true,
@@ -112,11 +112,11 @@ const actions = {
   },
   woocommerce: {
     admin: {
-      label: 'WooCommerce Admin [Ctrl + 2]',
+      label: 'WooCommerce Admin [Alt + 2]',
       action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
     },
     product: {
-      label: 'WooCommerce Product [Ctrl + 3]',
+      label: 'WooCommerce Product [Alt + 3]',
       action: (productId) =>
           GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
             active: true,
@@ -131,7 +131,7 @@ const actions = {
           ),
     },
     category: {
-      label: 'WooCommerce Category [Ctrl + 3]',
+      label: 'WooCommerce Category [Alt + 3]',
       action: (categoryName) =>
           GM_openInTab(
               `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
@@ -141,7 +141,7 @@ const actions = {
   },
   fitment: {
     fitmentChart: {
-      label: 'Fitment Chart [Ctrl + 4]',
+      label: 'Fitment Chart [Alt + 4]',
       action: (storeId, productId) =>
           GM_openInTab(
               `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
@@ -149,7 +149,7 @@ const actions = {
           ),
     },
     vehicleInfo: {
-      label: 'Vehicle Info [Ctrl + 5]',
+      label: 'Vehicle Info [Alt + 5]',
       action: (storeId, vehicle) => {
         const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
         for (const [key, value] of Object.entries(vehicle)) {
