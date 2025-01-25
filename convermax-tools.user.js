@@ -18,37 +18,54 @@
 // ==/UserScript==
 /* eslint-disable no-console, no-undef, camelcase */
 
-function getPlatform(platform = null) {
-  if (platform === 'shopify' || window.unsafeWindow?.Shopify) {
+function getPlatform() {
+  if (window.unsafeWindow?.Shopify) {
     return 'shopify';
-  } else if (platform === 'bigcommerce' || window.unsafeWindow?.BCData) {
+  } else if (window.unsafeWindow?.BCData) {
     return 'bigcommerce';
-  } else if (platform === 'woocommerce' || window.unsafeWindow?.woocommerce_params) {
+  } else if (window.unsafeWindow?.woocommerce_params) {
     return 'woocommerce';
-  } else if (platform === 'convermax') {
-    return 'convermax';
   }
   return null;
 }
 
-function getStoreId(platform = null) {
-  if (platform === 'bigcommerce' || window.unsafeWindow?.BCData) {
-    return document.querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-        ?.href?.split('s-')[1];
-  } else {
-    const url = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl;
-    return url?.replace('https://', '').replace('.myconvermax.com', '').replace('client.convermax.com/', '');
+function getStoreId() {
+  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId;
+  if (storeId) {
+    return storeId;
   }
-}
-function getProductId(platform = null) {
-  const platformHandlers = {
-    shopify: () => window.unsafeWindow?.ShopifyAnalytics?.meta?.page?.resourceId,
-    bigcommerce: () => document.querySelector('input[name=product_id]')?.value,
-    woocommerce: () => window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value,
-    convermax: () => window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId,
-  };
 
-  return platformHandlers[getPlatform(platform)]?.() || null;
+  const platform = getPlatform();
+  if (!platform) return null;
+
+  const platformHandlers = {
+    shopify: () => window.Shopify?.shop?.replace('.myshopify.com', '') || null,
+    bigcommerce: () => document
+        .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
+        ?.href?.split('s-')[1] || null,
+  }
+  return platformHandlers[platform]?.() || null;
+}
+
+function getProductId() {
+  const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+  if (productId) {
+    return productId;
+  }
+
+  const platform = getPlatform();
+  if (!platform) return null;
+
+  const platformHandlers = {
+    shopify: () => window.unsafeWindow?.ShopifyAnalytics?.meta?.page?.resourceId || null,
+    bigcommerce: () => document.querySelector('input[name=product_id]')?.value || null,
+    woocommerce: () => window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value || null,
+  }
+  return platformHandlers[platform]?.() || null;
+}
+
+function registerMenuCommands(commands) {
+  commands.forEach(({ label, action }) => GM_registerMenuCommand(label, action));
 }
 
 const actions = {
@@ -145,10 +162,6 @@ const actions = {
   },
 }
 
-function registerMenuCommands(commands) {
-  commands.forEach(({ label, action }) => GM_registerMenuCommand(label, action));
-}
-
 function registerConvermaxAdminMenuCommand() {
   const storeId = getStoreId();
   if (storeId) {
@@ -162,14 +175,13 @@ function registerConvermaxAdminMenuCommand() {
 }
 
 function registerPlatformAdminMenuCommand() {
-  const platform = getPlatform();
   const storeId = getStoreId();
   const productId = getProductId();
   const commands = [];
 
   const platformHandlers = {
     shopify: () => {
-      commands.push(actions.shopify.themes);
+      commands.push(actions.shopify.admin);
 
       const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
       if (page?.pageType === 'product') {
@@ -191,11 +203,6 @@ function registerPlatformAdminMenuCommand() {
           ...actions.bigcommerce.admin,
           action: () => actions.bigcommerce.admin.action(storeId),
         });
-        
-        commands.push({
-          ...actions.bigcommerce.categories,
-          action: () => actions.bigcommerce.categories.action(storeId),
-        })
 
         if (productId) {
           commands.push({
@@ -203,6 +210,11 @@ function registerPlatformAdminMenuCommand() {
             action: () => actions.bigcommerce.product.action(storeId, productId),
           });
         }
+
+        commands.push({
+          ...actions.bigcommerce.categories,
+          action: () => actions.bigcommerce.categories.action(storeId),
+        })
       }
     },
 
@@ -229,21 +241,21 @@ function registerPlatformAdminMenuCommand() {
       const categoryName = window.unsafeWindow?.cm_category;
       if (categoryName) {
         commands.push({
-          ...actions.woocommerce.categorySettings,
-          action: () => actions.woocommerce.categorySettings.action(categoryName),
+          ...actions.woocommerce.category,
+          action: () => actions.woocommerce.category.action(categoryName),
         });
       }
     },
   };
 
-  platformHandlers[platform]?.();
+  platformHandlers[getPlatform()]?.();
 
   registerMenuCommands(commands);
 }
 
 function registerFitmentsMenuCommand() {
   const storeId = getStoreId();
-  const productId = getProductId("convermax")
+  const productId = getProductId()
   const isFitmentSearch = !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
   const commands = [];
 
@@ -353,7 +365,7 @@ function ensureContextIsSet(getContext, timeout) {
 function registerHotkeys() {
   document.addEventListener('keydown', (e) => {
     const platform = getPlatform();
-    const storeId = getStoreId(platform);
+    const storeId = getStoreId();
     const productId = getProductId();
     
     if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key === '`') {
@@ -443,16 +455,9 @@ function registerHotkeys() {
 
   ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
     registerConvermaxAdminMenuCommand();
+    registerPlatformAdminMenuCommand();
     registerFitmentsMenuCommand();
     registerHotkeys();
-  });
-
-  ensureContextIsSet(
-    () =>
-      window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData || window.unsafeWindow?.woocommerce_params,
-    10000,
-  ).then(function () {
-    registerPlatformAdminMenuCommand();
   });
 
   const url = window.location.href;
