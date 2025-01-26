@@ -9,6 +9,7 @@
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
 // @grant        GM_setClipboard
+// @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
 // @grant        GM_getValue
@@ -28,6 +29,9 @@ function getPlatform() {
   if (window.unsafeWindow?.woocommerce_params) {
     return 'woocommerce';
   }
+  if (window.unsafeWindow?._3d_cart) {
+    return 'shift4shop'
+  }
   return null;
 }
 
@@ -44,7 +48,7 @@ function getStoreId(getNativeStoreId = null) {
     }
     return null;
   }
-  
+
   return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId || null;
 }
 
@@ -62,6 +66,7 @@ function getProductId() {
     },
     bigcommerce: () => document.querySelector('input[name=product_id]')?.value || null,
     woocommerce: () => window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value || null,
+    shift4shop: () => window.unsageWindow?._3d_item?.catalogid || null,
   }
   return platformHandlers[platform]?.() || null;
 }
@@ -142,6 +147,28 @@ const actions = {
           ),
     },
   },
+  shift4shop: {
+    admin: {
+      label: 'Shift4Shop Admin [Alt + 2]',
+      action: () => GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, { active: true }),
+
+    },
+    product: {
+      label: 'Shift4Shop Product [Alt + 3]',
+      action: (productId) =>
+          GM_openInTab(`${window.location.origin}/admin/iteminfo.asp?catid=${productId}&pannel=1`, {
+            active: true,
+          }),
+    },
+    category: {
+      label: 'Shift4Shop Category [Alt + 3]',
+      action: (securityToken, categoryId) =>
+          GM_openInTab(
+              `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${categoryId}`,
+              { active: true },
+          ),
+    },
+  },
   fitment: {
     fitmentChart: {
       label: 'Fitment Chart [Alt + 4]',
@@ -176,7 +203,7 @@ function registerConvermaxAdminMenuCommand() {
   }
 }
 
-function registerPlatformAdminMenuCommand() {
+async function registerPlatformAdminMenuCommand() {
   const productId = getProductId();
   const commands = [];
 
@@ -248,9 +275,38 @@ function registerPlatformAdminMenuCommand() {
         });
       }
     },
+
+    shift4shop: async () => {
+      commands.push(actions.shift4shop.admin);
+
+      if (productId) {
+        commands.push({
+          ...actions.shift4shop.product,
+          action: () => actions.shift4shop.product.action(productId),
+        });
+      }
+
+      const categoryId = window.unsafeWindow?.catID;
+      if (categoryId !== "[catid]") {
+        try {
+          const securityToken = await getShift4ShopSecurityToken();
+          commands.push({
+            label: !!productId
+                ? "Shift4Shop Category"
+                : actions.shift4shop.category.label,
+            action: () => actions.shift4shop.category.action(securityToken, categoryId),
+          });
+        } catch (error) {
+          console.error('Failed to get security token:', error);
+        }
+      }
+    }
   };
 
-  platformHandlers[getPlatform()]?.();
+  const platformHandler = platformHandlers[getPlatform()];
+  if (platformHandler) {
+    await platformHandler();
+  }
 
   registerMenuCommands(commands);
 }
@@ -343,6 +399,26 @@ function fixNoStoreAtShopifyPartners() {
   return false;
 }
 
+function getShift4ShopSecurityToken() {
+  return new Promise((resolve, reject) => {
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: `${window.location.origin}/admin/category_view.asp`,
+      onload: function(response) {
+        const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
+        if (tokenMatch && tokenMatch[1]) {
+          resolve(tokenMatch[1]);
+        } else {
+          reject(new Error('Security token not found in the response.'));
+        }
+      },
+      onerror: function(error) {
+        reject(error);
+      }
+    });
+  });
+}
+
 function bypassShopifyPassword() {
   if (window.location.href.includes('.myshopify.com/password')) {
     window.location.replace(`${window.location.origin}/admin/themes`);
@@ -395,9 +471,10 @@ function registerHotkeys() {
             actions.shopify.admin.action();
           } else if (platform === 'bigcommerce' && storeId) {
             actions.bigcommerce.admin.action(storeId);
-          }
-          else if (platform === 'woocommerce') {
+          } else if (platform === 'woocommerce') {
             actions.woocommerce.admin.action();
+          } else if (platform === 'shift4shop') {
+            actions.shift4shop.admin.action();
           }
           break;
 
@@ -422,6 +499,17 @@ function registerHotkeys() {
               actions.woocommerce.product.action(productId);
             } else if (categoryName) {
               actions.woocommerce.category.action(categoryName);
+            }
+          } else if (platform === 'shift4shop') {
+            const categoryId = window.unsafeWindow?.catID;
+            if (productId) {
+              actions.shift4shop.product.action(productId);
+            } else if (categoryId !== "[catid]") {
+              getShift4ShopSecurityToken().then(securityToken => {
+                actions.shift4shop.category.action(securityToken, categoryId);
+              }).catch(error => {
+                console.error('Failed to get security token:', error);
+              });
             }
           }
           break;
@@ -450,9 +538,9 @@ function registerHotkeys() {
 
   bypassShopifyPassword();
 
-  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
+  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(async function () {
     registerConvermaxAdminMenuCommand();
-    registerPlatformAdminMenuCommand();
+    await registerPlatformAdminMenuCommand();
     registerFitmentsMenuCommand();
     registerHotkeys();
   });
