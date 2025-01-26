@@ -65,7 +65,7 @@ function log(message) {
 
           log(`${scriptInfo.name} v${scriptInfo.version} UserScript`);
 
-          injectScript('https://localhost:3000/temp/search.js');
+          injectScript('https://localhost.convermax.dev:3000/temp/search.js');
         }, 500); // set it to 1000 or higher if script won't load
       }
 
@@ -74,7 +74,7 @@ function log(message) {
       if (styleTag) {
         const localStyleTag = document.createElement('link');
         localStyleTag.rel = 'stylesheet';
-        localStyleTag.href = 'https://localhost:3000/temp/search.css';
+        localStyleTag.href = 'https://localhost.convermax.dev:3000/temp/search.css';
         styleTag.parentElement.replaceChild(localStyleTag, styleTag);
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
@@ -98,7 +98,7 @@ function log(message) {
   }
 
   function reloadCss() {
-    const link = document.querySelector('[href^="https://localhost:3000/temp/search.css"]');
+    const link = document.querySelector('[href^="https://localhost.convermax.dev:3000/temp/search.css"]');
     const href = new URL(link.href);
     href.searchParams.set('force_reload', Date.now());
     link.href = href;
