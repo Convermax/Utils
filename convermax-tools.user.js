@@ -241,7 +241,9 @@ async function registerPlatformAdminMenuCommand() {
         }
 
         commands.push({
-          ...actions.bigcommerce.categories,
+          label: !!productId
+              ? "BigCommerce Categories"
+              : actions.bigcommerce.categories.label,
           action: () => actions.bigcommerce.categories.action(nativeStoreId),
         })
       }
