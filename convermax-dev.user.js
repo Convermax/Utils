@@ -4,7 +4,7 @@
 // @description  convermax-dev
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.7
+// @version      20.8
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
