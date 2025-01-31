@@ -77,117 +77,126 @@ function registerMenuCommands(commands) {
 
 const actions = {
   convermax: {
-    admin: {
+    admin: (storeId) => ({
       label: 'Convermax Admin [Alt + 1]',
-      action: (storeId) => GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true }),
-    },
+      action: () => GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true }),
+    }),
   },
   shopify: {
     admin: {
       label: 'Shopify Themes [Alt + 2]',
       action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true }),
     },
-    product: {
+    product: (resourceId) => ({
       label: 'Shopify Product [Alt + 3]',
-      action: (resourceId) =>
-          GM_openInTab(`${window.location.origin}/admin/products/${resourceId}`, { active: true }),
-    },
-    collection: {
+      action: () => GM_openInTab(`${window.location.origin}/admin/products/${resourceId}`, { active: true }),
+    }),
+    collection: (resourceId) => ({
       label: 'Shopify Collection [Alt + 3]',
-      action: (resourceId) =>
-          GM_openInTab(`${window.location.origin}/admin/collections/${resourceId}`, { active: true }),
-    },
+      action: () => GM_openInTab(`${window.location.origin}/admin/collections/${resourceId}`, { active: true }),
+    }),
   },
   bigcommerce: {
-    admin: {
+    admin: (storeId) => ({
       label: 'BigCommerce Admin [Alt + 2]',
-      action: (storeId) => GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, { active: true }),
-    },
-    product: {
+      action: () => GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, { active: true }),
+    }),
+    product: (storeId, productId) => ({
       label: 'BigCommerce Product [Alt + 3]',
-      action: (storeId, productId) =>
+      action: () =>
           GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
             active: true,
           }),
-    },
-    categories: {
-      label: 'BigCommerce Categories [Alt + 3]',
-      action: (storeId) =>
+    }),
+    categories: (storeId, customLabel = null) => ({
+      label: customLabel || 'BigCommerce Categories [Alt + 3]',
+      action: () =>
           GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/categories`, {
             active: true,
           }),
-    },
+    }),
   },
   woocommerce: {
     admin: {
       label: 'WooCommerce Admin [Alt + 2]',
       action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
     },
-    product: {
+    product: (productId) => ({
       label: 'WooCommerce Product [Alt + 3]',
-      action: (productId) =>
+      action: () =>
           GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
             active: true,
           }),
-    },
-    categoryProducts: {
+    }),
+    categoryProducts: (categoryHandle) => ({
       label: 'WooCommerce Category Products',
-      action: (categoryHandle) =>
+      action: () =>
           GM_openInTab(
               `${window.location.origin}/wp-admin/edit.php?product_cat=${categoryHandle}&post_type=product`,
               { active: true },
           ),
-    },
-    category: {
+    }),
+    category: (categoryName) => ({
       label: 'WooCommerce Category [Alt + 3]',
-      action: (categoryName) =>
+      action: () =>
           GM_openInTab(
               `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
               { active: true },
           ),
-    },
+    }),
   },
   shift4shop: {
     admin: {
       label: 'Shift4Shop Admin [Alt + 2]',
       action: () => GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, { active: true }),
-
     },
-    product: {
+    product: (productId) => ({
       label: 'Shift4Shop Product [Alt + 3]',
-      action: (productId) =>
+      action: () =>
           GM_openInTab(`${window.location.origin}/admin/iteminfo.asp?catid=${productId}&pannel=1`, {
             active: true,
           }),
-    },
-    category: {
-      label: 'Shift4Shop Category [Alt + 3]',
-      action: (securityToken, categoryId) =>
+    }),
+    category: (categoryId, customLabel = null) => ({
+      label: customLabel || 'Shift4Shop Category [Alt + 3]',
+      action: async () => {
+        try {
+          const securityToken = await getShift4ShopSecurityToken();
           GM_openInTab(
               `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${categoryId}`,
-              { active: true },
-          ),
-    },
+              {active: true},
+          )
+        } catch (error) {
+          alert('Failed to get security token');
+          console.error('Failed to get security token:', error);
+        }
+      }
+    }),
   },
   fitment: {
-    fitmentChart: {
+    fitmentChart: (storeId, productId) => ({
       label: 'Fitment Chart [Alt + 4]',
-      action: (storeId, productId) =>
+      action: () =>
           GM_openInTab(
               `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
               { active: true },
           ),
-    },
-    vehicleInfo: {
+    }),
+    vehicleInfo: (storeId) => ({
       label: 'Vehicle Info [Alt + 5]',
-      action: (storeId, vehicle) => {
-        const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
-        for (const [key, value] of Object.entries(vehicle)) {
-          url.searchParams.set(key, value);
+      action: () => {
+        if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
+          const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
+          const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
+          for (const [key, value] of Object.entries(vehicle)) {
+            url.searchParams.set(key, value);
+          }
+          GM_openInTab(url.href, {active: true});
+        } else {
+          alert('Convermax Tools: No vehicle selected!');
         }
-        GM_openInTab(url.href, { active: true });
       },
-    },
+    }),
   },
 }
 
@@ -195,115 +204,82 @@ function registerConvermaxAdminMenuCommand() {
   const storeId = getStoreId();
   if (storeId) {
     registerMenuCommands([
-      {
-        label: actions.convermax.admin.label,
-        action: () => actions.convermax.admin.action(storeId),
-      },
+      actions.convermax.admin(storeId),
     ]);
   }
 }
 
 async function registerPlatformAdminMenuCommand() {
+  const storeId = getStoreId();
+  const nativeStoreId = getStoreId(true);
   const productId = getProductId();
   const commands = [];
 
   const platformHandlers = {
     shopify: () => {
-      commands.push(actions.shopify.admin);
-
       const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-      if (page?.pageType === 'product' && page.resourceId) {
-        commands.push({
-          ...actions.shopify.product,
-          action: () => actions.shopify.product.action(page.resourceId),
-        });
-      } else if (page?.pageType === 'collection' && page.resourceId) {
-        commands.push({
-          ...actions.shopify.collection,
-          action: () => actions.shopify.collection.action(page.resourceId),
-        });
+      
+      commands.push(actions.shopify.admin);
+      if (page.resourceId) {
+        if (page?.pageType === 'product') {
+          commands.push(actions.shopify.product(page.resourceId));
+        }
+        if (page?.pageType === 'collection') {
+          commands.push(actions.shopify.collection(page.resourceId));
+        }
       }
     },
 
     bigcommerce: () => {
-      const nativeStoreId = getStoreId(true);
+      commands.push(actions.bigcommerce.admin(storeId));
       if (nativeStoreId) {
-        commands.push({
-          ...actions.bigcommerce.admin,
-          action: () => actions.bigcommerce.admin.action(nativeStoreId),
-        });
-
         if (productId) {
-          commands.push({
-            ...actions.bigcommerce.product,
-            action: () => actions.bigcommerce.product.action(nativeStoreId, productId),
-          });
+          commands.push(actions.bigcommerce.product(nativeStoreId, productId));
         }
 
-        commands.push({
-          label: !!productId
-              ? "BigCommerce Categories"
-              : actions.bigcommerce.categories.label,
-          action: () => actions.bigcommerce.categories.action(nativeStoreId),
-        })
+        commands.push(
+          !!productId
+            ? actions.bigcommerce.categories(nativeStoreId, "BigCommerce Categories")
+            : actions.bigcommerce.categories(nativeStoreId)
+        );
       }
     },
 
     woocommerce: () => {
-      commands.push(actions.woocommerce.admin);
-
-      if (productId) {
-        commands.push({
-          ...actions.woocommerce.product,
-          action: () => actions.woocommerce.product.action(productId),
-        });
-      }
-
-      const categoryHandle = window.location.pathname.includes('/product-category/')
-          ? window.location.pathname.replace('/product-category/', '')
-          : '';
-      if (categoryHandle) {
-        commands.push({
-          ...actions.woocommerce.categoryProducts,
-          action: () => actions.woocommerce.categoryProducts.action(categoryHandle),
-        });
-      }
-
       const categoryName = window.unsafeWindow?.cm_category;
+      const categoryHandle = window.location.pathname.includes('/product-category/')
+        ? window.location.pathname.replace('/product-category/', '')
+        : '';
+      
+      commands.push(actions.woocommerce.admin);
+      if (productId) {
+        commands.push(actions.woocommerce.product(storeId));
+      }
+      if (categoryHandle) {
+        commands.push(actions.woocommerce.categoryProducts(categoryHandle));
+      }
       if (categoryName) {
-        commands.push({
-          ...actions.woocommerce.category,
-          action: () => actions.woocommerce.category.action(categoryName),
-        });
+        commands.push(actions.woocommerce.category(categoryName));
       }
     },
 
     shift4shop: async () => {
-      commands.push(actions.shift4shop.admin);
-
-      if (productId) {
-        commands.push({
-          ...actions.shift4shop.product,
-          action: () => actions.shift4shop.product.action(productId),
-        });
-      }
-
       const categoryId = window.unsafeWindow?.catID;
-      if (categoryId !== "[catid]") {
-        try {
-          const securityToken = await getShift4ShopSecurityToken();
-          commands.push({
-            label: !!productId
-                ? "Shift4Shop Category"
-                : actions.shift4shop.category.label,
-            action: () => actions.shift4shop.category.action(securityToken, categoryId),
-          });
-        } catch (error) {
-          console.error('Failed to get security token:', error);
+
+      commands.push(actions.shift4shop.admin);
+      if (productId) {
+        commands.push(actions.shift4shop.product(productId));
+      }
+      if (!isNaN(categoryId)) {
+        commands.push(
+          !!productId
+            ? actions.shift4shop.category(categoryId, "Shift4Shop Category")
+            : actions.shift4shop.category(categoryId)
+        );
         }
       }
     }
-  };
+  }
 
   const platformHandler = platformHandlers[getPlatform()];
   if (platformHandler) {
@@ -322,23 +298,10 @@ function registerFitmentsMenuCommand() {
   if (!storeId || !isFitmentSearch) return;
 
   if (productId) {
-    commands.push({
-      label: actions.fitment.fitmentChart.label,
-      action: () => actions.fitment.fitmentChart.action(storeId, productId),
-    });
+    actions.fitment.fitmentChart(storeId, productId);
   }
 
-  commands.push({
-    label: actions.fitment.vehicleInfo.label,
-    action: () => {
-      if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
-        const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
-        actions.fitment.vehicleInfo.action(storeId, vehicle);
-      } else {
-        alert('Convermax Tools: No vehicle selected!');
-      }
-    },
-  });
+  commands.push(actions.fitment.vehicleInfo(storeId));
 
   registerMenuCommands(commands);
 }
@@ -485,9 +448,9 @@ function registerHotkeys() {
           if (platform === 'shopify') {
             const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
             if (page?.pageType === 'product' && page.resourceId) {
-              actions.shopify.product.action(page.resourceId);
+              actions.shopify.product(page.resourceId).action();
             } else if (page?.pageType === 'collection' && page.resourceId) {
-              actions.shopify.collection.action(page.resourceId);
+              actions.shopify.collection(page.resourceId).action();
             }
           } else if (platform === 'bigcommerce' && storeId) {
             if (productId) {
@@ -526,8 +489,7 @@ function registerHotkeys() {
         case '5': // Vehicle info
           if (storeId && window.unsafeWindow?.Convermax?.isVehicleSelected?.()) {
             e.preventDefault();
-            const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
-            actions.fitment.vehicleInfo.action(storeId, vehicle);
+            actions.fitment.vehicleInfo.action(storeId);
           }
           break;
       }
