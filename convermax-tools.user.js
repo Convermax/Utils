@@ -60,9 +60,6 @@ const platforms = {
     ],
   },
   bigcommerce: {
-    get storeId() {
-      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId || null
-    },
     get nativeStoreId() {
       return document
       .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
@@ -73,12 +70,12 @@ const platforms = {
           window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
           null;
     },
-    test: () => window.unsafeWindow?.BCData && platforms.bigcommerce.storeId,
+    test: () => window.unsafeWindow?.BCData && platforms.bigcommerce.nativeStoreId,
     general: [
       {
         label: 'BigCommerce Admin [Alt + 2]',
         hotkey: '2',
-        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeId}.mybigcommerce.com/manage`, { active: true }),
+        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage`, { active: true }),
       }
     ],
     resources: [
