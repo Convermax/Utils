@@ -29,6 +29,7 @@ const platforms = {
       {
         label: 'Shopify Themes [Alt + 2]',
         hotkey: '2',
+        order: 2,
         action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true }),
       }
     ],
@@ -39,6 +40,7 @@ const platforms = {
           {
             label: 'Shopify Product [Alt + 3]',
             hotkey: '3',
+            order: 3,
             action: function() {
               GM_openInTab(`${window.location.origin}/admin/products/${platforms.shopify.page.resourceId}`, { active: true });
             },
@@ -51,6 +53,7 @@ const platforms = {
           {
             label: 'Shopify Collection [Alt + 3]',
             hotkey: '3',
+            order: 3,
             action: () => {
               GM_openInTab(`${window.location.origin}/admin/collections/${platforms.shopify.page.resourceId}`, { active: true });
             },
@@ -62,8 +65,8 @@ const platforms = {
   bigcommerce: {
     get nativeStoreId() {
       return document
-      .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-      ?.href?.split('s-')[1] || null;
+          .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
+          ?.href?.split('s-')[1] || null;
     },
     get productId() {
       return document.querySelector('input[name=product_id]')?.value ||
@@ -75,6 +78,7 @@ const platforms = {
       {
         label: 'BigCommerce Admin [Alt + 2]',
         hotkey: '2',
+        order: 2,
         action: () => GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage`, { active: true }),
       }
     ],
@@ -85,6 +89,7 @@ const platforms = {
           {
             label: 'BigCommerce Product [Alt + 3]',
             hotkey: '3',
+            order: 3,
             action: () => {
               GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/edit/${platforms.bigcommerce.productId}`, {
                 active: true,
@@ -95,20 +100,26 @@ const platforms = {
       },
       {
         test: () => platforms.bigcommerce.nativeStoreId,
-        actions: [
-          {
-            isProductPage: document.querySelector('input[name=product_id]')?.value ||
-                window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-                null,
-            label: this.isProductPage ? 'BigCommerce Categories' : 'BigCommerce Categories [Alt + 3]',
-            hotkey: this.isProductPage ? null : '3',
-            action: () => {
-              GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/categories`, {
-                active: true,
-              });
+        actions: (() => {
+          const isProductPage = document.querySelector('input[name=product_id]')?.value ||
+              window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+          const label = isProductPage ? 'BigCommerce Categories' : 'BigCommerce Categories [Alt + 3]';
+          const hotkey = isProductPage ? null : '3';
+
+          return [
+            {
+              label,
+              hotkey,
+              order: 3,
+              action: () => {
+                GM_openInTab(
+                    `https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/categories`,
+                    {active: true},
+                );
+              }
             },
-          },
-        ],
+          ];
+        })(),
       }
     ],
   },
@@ -132,6 +143,7 @@ const platforms = {
       {
         label: 'WooCommerce Admin [Alt + 2]',
         hotkey: '2',
+        order: 2,
       action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
       }
     ],
@@ -142,6 +154,7 @@ const platforms = {
           {
             label: 'WooCommerce Product [Alt + 3]',
             hotkey: '3',
+            order: 3,
             action: () =>
               GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${platforms.woocommerce.productId}&action=edit`, {
               active: true,
@@ -155,6 +168,7 @@ const platforms = {
           {
             label: 'WooCommerce Category [Alt + 3]',
             hotkey: '3',
+            order: 3,
             action: () =>
             GM_openInTab(
               `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${platforms.woocommerce.categoryName.replace(' ', '+')}`,
@@ -192,6 +206,7 @@ const platforms = {
       {
         label: 'Shift4Shop Admin [Alt + 2]',
         hotkey: '2',
+        order: 2,
         action: () => GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, { active: true }),
       },
     ],
@@ -202,6 +217,7 @@ const platforms = {
           {
             label: 'Shift4Shop Product [Alt + 3]',
             hotkey: '3',
+            order: 3,
             action: () =>
               GM_openInTab(`${window.location.origin}/admin/iteminfo.asp?catid=${platforms.shift4shop.productId}&pannel=1`, {
                 active: true,
@@ -211,27 +227,31 @@ const platforms = {
       },
       {
         test: () => !isNaN(platforms.shift4shop.categoryId),
-        actions: [
-          {
-            isProductPage: window.unsafeWindow?.unsageWindow?._3d_item?.catalogid ||
-                window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-                null,
-            label: this.isProductPage ? 'Shift4Shop Category' : 'Shift4Shop Category [Alt + 3]',
-            hotkey: this.isProductPage ? null : '3',
-            action: async () => {
-              try {
-                const securityToken = await getShift4ShopSecurityToken();
-                GM_openInTab(
-                    `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`,
-                    {active: true},
-                )
-              } catch (error) {
-                alert('Failed to get security token');
-                console.error('Failed to get security token:', error);
+        actions: (() => {
+          const isProductPage = window.unsafeWindow?.unsageWindow?._3d_item?.catalogid ||
+              window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+          const label = isProductPage ? 'Shift4Shop Category' : 'Shift4Shop Category [Alt + 3]';
+          const hotkey = isProductPage ? null : '3';
+          return [
+            {
+              label,
+              hotkey,
+              order: 3,
+              action: async () => {
+                try {
+                  const securityToken = await getShift4ShopSecurityToken();
+                  GM_openInTab(
+                      `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`,
+                      {active: true},
+                  );
+                } catch (error) {
+                  alert('Failed to get security token');
+                  console.error('Failed to get security token:', error);
+                }
               }
-            }
-          },
-        ],
+            },
+          ];
+        })(),
       }
     ],
   },
@@ -251,6 +271,7 @@ const platforms = {
       {
         label: 'Convermax Admin [Alt + 1]',
         hotkey: '1',
+        order: 1,
         action: () => GM_openInTab(`https://myconvermax.com/${platforms.common.storeId}/status`, { active: true }),
       },
       {
@@ -266,6 +287,7 @@ const platforms = {
           {
             label: 'Fitment Chart [Alt + 4]',
             hotkey: '4',
+            order: 4,
             action: () => GM_openInTab(`https://${platforms.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${platforms.common.productId}&includeSource=true`, {active: true}),
           },
         ],
@@ -276,6 +298,7 @@ const platforms = {
           {
             label: 'Vehicle Info [Alt + 5]',
             hotkey: '5',
+            order: 5,
             action: () => {
               const vehicleSelected = window.unsafeWindow?.Convermax?.isVehicleSelected();
               if (vehicleSelected) {
@@ -311,7 +334,7 @@ async function registerCommandsAndHotKeys() {
 
   commands
       .filter(({ label }) => label)
-      .sort((a, b) => (a.hotkey || '9').localeCompare(b.hotkey || '9'))
+      .sort((a, b) => (a.order || 9) - (b.order || 9))
       .forEach(({ label, action }) => GM_registerMenuCommand(label, action));
   commands
       .filter(({ hotkey }) => hotkey)
