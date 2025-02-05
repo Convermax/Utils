@@ -86,7 +86,7 @@ const platforms = {
             label: 'BigCommerce Product [Alt + 3]',
             hotkey: '3',
             action: () => {
-              GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/${platforms.bigcommerce.productId}/edit`, {
+              GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/edit/${platforms.bigcommerce.productId}`, {
                 active: true,
               })
             },
@@ -237,7 +237,8 @@ const platforms = {
   },
   common: {
     get storeId() {
-      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId || null;
+      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+          ?.match(/https:\/\/(.*?)\.myconvermax\.com/)?.[1] || null;
     },
     get productId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
@@ -264,7 +265,7 @@ const platforms = {
         actions: [
           {
             label: 'Fitment Chart [Alt + 4]',
-            // hotkey: '4',
+            hotkey: '4',
             action: () => GM_openInTab(`https://${platforms.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${platforms.common.productId}&includeSource=true`, {active: true}),
           },
         ],
