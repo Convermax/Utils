@@ -65,13 +65,13 @@ const platforms = {
   bigcommerce: {
     get nativeStoreId() {
       return document
-          .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-          ?.href?.split('s-')[1] || null;
+        .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
+        ?.href?.split('s-')[1] || null;
     },
     get productId() {
       return document.querySelector('input[name=product_id]')?.value ||
-          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-          null;
+        window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
+        null;
     },
     test: () => window.unsafeWindow?.BCData && platforms.bigcommerce.nativeStoreId,
     general: [
@@ -102,7 +102,7 @@ const platforms = {
         test: () => platforms.bigcommerce.nativeStoreId,
         actions: (() => {
           const isProductPage = document.querySelector('input[name=product_id]')?.value ||
-              window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+            window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
           const label = isProductPage ? 'BigCommerce Categories' : 'BigCommerce Categories [Alt + 3]';
           const hotkey = isProductPage ? null : '3';
 
@@ -113,8 +113,8 @@ const platforms = {
               order: 3,
               action: () => {
                 GM_openInTab(
-                    `https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/categories`,
-                    {active: true},
+                  `https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/categories`,
+                  {active: true},
                 );
               }
             },
@@ -126,9 +126,9 @@ const platforms = {
   woocommerce: {
     get productId() {
       return window.unsafeWindow?.cm_product?.[0] ||
-          document.querySelector('button[name="add-to-cart"]')?.value ||
-          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-          null;
+        document.querySelector('button[name="add-to-cart"]')?.value ||
+        window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
+        null;
     },
     get categoryName() {
       return window.unsafeWindow?.cm_category;
@@ -144,7 +144,7 @@ const platforms = {
         label: 'WooCommerce Admin [Alt + 2]',
         hotkey: '2',
         order: 2,
-      action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
+        action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
       }
     ],
     resources: [
@@ -157,8 +157,8 @@ const platforms = {
             order: 3,
             action: () =>
               GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${platforms.woocommerce.productId}&action=edit`, {
-              active: true,
-            }),
+                active: true,
+              }),
           },
         ]
       },
@@ -170,10 +170,10 @@ const platforms = {
             hotkey: '3',
             order: 3,
             action: () =>
-            GM_openInTab(
-              `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${platforms.woocommerce.categoryName.replace(' ', '+')}`,
-              { active: true },
-            ),
+              GM_openInTab(
+                `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${platforms.woocommerce.categoryName.replace(' ', '+')}`,
+                { active: true },
+              ),
           },
         ],
       },
@@ -195,8 +195,8 @@ const platforms = {
   shift4shop: {
     get productId() {
       return window.unsafeWindow?.unsageWindow?._3d_item?.catalogid ||
-          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-          null;
+        window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
+        null;
     },
     get categoryId() {
       return window.unsafeWindow?.catID || null
@@ -229,7 +229,7 @@ const platforms = {
         test: () => !isNaN(platforms.shift4shop.categoryId),
         actions: (() => {
           const isProductPage = window.unsafeWindow?.unsageWindow?._3d_item?.catalogid ||
-              window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+            window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
           const label = isProductPage ? 'Shift4Shop Category' : 'Shift4Shop Category [Alt + 3]';
           const hotkey = isProductPage ? null : '3';
           return [
@@ -241,8 +241,8 @@ const platforms = {
                 try {
                   const securityToken = await getShift4ShopSecurityToken();
                   GM_openInTab(
-                      `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`,
-                      {active: true},
+                    `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`,
+                    {active: true},
                   );
                 } catch (error) {
                   alert('Failed to get security token');
@@ -258,7 +258,7 @@ const platforms = {
   common: {
     get storeId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-          ?.match(/https:\/\/(.*?)\.myconvermax\.com/)?.[1] || null;
+        ?.match(/https:\/\/(.*?)\.myconvermax\.com/)?.[1] || null;
     },
     get productId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
@@ -333,23 +333,23 @@ async function registerCommandsAndHotKeys() {
   });
 
   commands
-      .filter(({ label }) => label)
-      .sort((a, b) => (a.order || 9) - (b.order || 9))
-      .forEach(({ label, action }) => GM_registerMenuCommand(label, action));
+    .filter(({ label }) => label)
+    .sort((a, b) => (a.order || 9) - (b.order || 9))
+    .forEach(({ label, action }) => GM_registerMenuCommand(label, action));
   commands
-      .filter(({ hotkey }) => hotkey)
-      .forEach(({ hotkey, ctrlKey, action }) => {
+    .filter(({ hotkey }) => hotkey)
+    .forEach(({ hotkey, ctrlKey, action }) => {
       document.addEventListener('keydown', (e) => {
         if (
-            e.key === hotkey &&
-            ((ctrlKey && e.ctrlKey && !e.altKey) || (!ctrlKey && !e.ctrlKey && e.altKey)) &&
-            !e.shiftKey
+          e.key === hotkey &&
+          ((ctrlKey && e.ctrlKey && !e.altKey) || (!ctrlKey && !e.ctrlKey && e.altKey)) &&
+          !e.shiftKey
         ) {
           e.preventDefault();
           action();
         }
       });
-  });
+    });
 }
 
 function isShopifyAdminFixTimeoutExpired() {
