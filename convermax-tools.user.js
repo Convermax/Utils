@@ -22,7 +22,7 @@
 const platforms = {
   shopify: {
     get page() {
-      return window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
+      return window.unsafeWindow?.ShopifyAnalytics?.meta?.page || null;
     },
     test: () => window.unsafeWindow?.Shopify,
     general: [
@@ -35,7 +35,7 @@ const platforms = {
     ],
     resources: [
       {
-        test: () => platforms.shopify.page.pageType === 'product' && platforms.shopify.page.resourceId,
+        test: () => !!platforms.shopify.page && platforms.shopify.page.pageType === 'product' && platforms.shopify.page.resourceId,
         actions: [
           {
             label: 'Shopify Product [Alt + 3]',
@@ -48,7 +48,7 @@ const platforms = {
         ]
       },
       {
-        test: () => platforms.shopify.page.pageType === 'collection' && platforms.shopify.page.resourceId,
+        test: () => !!platforms.shopify.page && platforms.shopify.page.pageType === 'collection' && platforms.shopify.page.resourceId,
         actions: [
           {
             label: 'Shopify Collection [Alt + 3]',
@@ -452,6 +452,53 @@ function ensureContextIsSet(getContext, timeout) {
   }
 }
 
+function setupPermissionsButton() {
+  const requiredPermissions = [
+    'products',
+    'manage_products',
+    'manage_inventory',
+    'delete_products',
+    'metaobject_definitions_view',
+    'metaobjects_view',
+    'metaobject_definitions_edit',
+    'metaobjects_edit',
+    'metaobject_definitions_delete',
+    'metaobjects_delete',
+    'applications', 'themes',
+    'edit_theme_code',
+    'pages',
+    'links'
+  ];
+
+  const targetButton = document.querySelector('#create-new-store-button');
+  if (!targetButton) return;
+
+  const button = document.createElement('button');
+  button.textContent = 'Select permissions';
+  button.className = 'Polaris-Button Polaris-Button--primary';
+  button.style.marginLeft = '10px';
+  button.setAttribute('type', 'button');
+
+  button.addEventListener('click', () => {
+    requiredPermissions.forEach(permission => {
+      const checkbox = document.querySelector(`input#${permission}.Polaris-Checkbox__Input`);
+      if (checkbox && !checkbox.checked) {
+        checkbox.click();
+      }
+    });
+
+    const textArea = document.querySelector('textarea#PolarisTextField2');
+    if (textArea) {
+      textArea.value = 'We’re the Convermax team and would love access to your Shopify store to help with our app integration.' +
+        '\nLet us know if you need any details.';
+      textArea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
+  targetButton.parentNode.insertBefore(button, targetButton.nextSibling);
+}
+
+
 (function () {
   'use strict';
 
@@ -467,5 +514,8 @@ function ensureContextIsSet(getContext, timeout) {
   }
   if (url.startsWith('https://partners.shopify.com/201897/stores?search_value=')) {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
+  }
+  if (url.startsWith('https://partners.shopify.com/')) {
+    setTimeout(setupPermissionsButton, 1000);
   }
 })();
