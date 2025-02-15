@@ -177,7 +177,25 @@ const platforms = {
     get categoryId() {
       return window.unsafeWindow?.catID || null
     },
-    test: () => window.unsafeWindow?._3d_cart,
+    get securityToken() {
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: "GET",
+          url: `${window.location.origin}/admin/category_view.asp`,
+          onload: function(response) {
+            const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
+            if (tokenMatch && tokenMatch[1]) {
+              resolve(tokenMatch[1]);
+            } else {
+              reject(new Error('Security token not found in the response.'));
+           }
+          },
+          onerror: function(error) {
+           reject(error);
+          }
+        });
+      });
+    },
     general: [
       {
         label: 'Shift4Shop Admin [Alt + 2]',
@@ -212,13 +230,10 @@ const platforms = {
               order: 3,
               action: async () => {
                 try {
-                  const securityToken = await getShift4ShopSecurityToken();
-                  GM_openInTab(
-                    `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`,
-                    {active: true},
-                  );
+                  const securityToken = await platforms.shift4shop.securityToken;
+                  GM_openInTab(`${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`, {active: true});
                 } catch (error) {
-                  alert('Failed to get security token');
+                  alert('Failed to get security token\nTry to log in to the store manager');
                   console.error('Failed to get security token:', error);
                 }
               }
@@ -381,26 +396,6 @@ function fixNoStoreAtShopifyPartners() {
     return true;
   }
   return false;
-}
-
-function getShift4ShopSecurityToken() {
-  return new Promise((resolve, reject) => {
-    GM_xmlhttpRequest({
-      method: "GET",
-      url: `${window.location.origin}/admin/category_view.asp`,
-      onload: function(response) {
-        const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
-        if (tokenMatch && tokenMatch[1]) {
-          resolve(tokenMatch[1]);
-        } else {
-          reject(new Error('Security token not found in the response.'));
-        }
-      },
-      onerror: function(error) {
-        reject(error);
-      }
-    });
-  });
 }
 
 function bypassShopifyPassword() {
