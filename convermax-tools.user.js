@@ -262,7 +262,9 @@ const platforms = {
     test: () => platforms.common.storeId,
     get storeId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-        ?.match(/https:\/\/(.*?)\.myconvermax\.com/)?.[1] || null;
+        ?.replace('https://', '')
+        ?.replace('.myconvermax.com', '')
+        ?.replace('client.convermax.com/', '') || null;
     },
     get productId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
