@@ -272,6 +272,9 @@ const platforms = {
     get isFitmentSearch() {
       return !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
     },
+    get vehicle() {
+      return window.unsafeWindow?.Convermax?.getVehicle();
+    },
     general: [
       {
         label: 'Convermax Admin [Alt + 1]',
@@ -305,9 +308,8 @@ const platforms = {
             hotkey: '5',
             order: 5,
             action: () => {
-              const vehicleSelected = window.unsafeWindow?.Convermax?.isVehicleSelected();
-              if (vehicleSelected) {
-                const vehicle = window.unsafeWindow?.Convermax?.getVehicle();
+              if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
+                const vehicle = platforms.common.vehicle;
                 const url = new URL(`https://${platforms.common.storeId}.myconvermax.com/ymm/vehicleinfo.html`);
                 for (const [key, value] of Object.entries(vehicle)) {
                   url.searchParams.set(key, value);
