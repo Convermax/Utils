@@ -347,11 +347,8 @@ async function registerCommandsAndHotKeys() {
     .filter(({ hotkey }) => hotkey)
     .forEach(({ hotkey, ctrlKey, action }) => {
       document.addEventListener('keydown', (e) => {
-        if (
-          e.key === hotkey &&
-          ((ctrlKey && e.ctrlKey && !e.altKey) || (!ctrlKey && !e.ctrlKey && e.altKey)) &&
-          !e.shiftKey
-        ) {
+        if (!e.shiftKey && e.key === hotkey &&
+          (ctrlKey && e.ctrlKey && !e.altKey || !ctrlKey && !e.ctrlKey && e.altKey)) {
           e.preventDefault();
           action();
         }
