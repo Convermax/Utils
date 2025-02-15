@@ -30,7 +30,11 @@ const platforms = {
         label: 'Shopify Themes [Alt + 2]',
         hotkey: '2',
         order: 2,
-        action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true }),
+        action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true })
+      },
+      {
+        label: 'Shopify All Collections',
+        action: () => GM_openInTab(`${window.location.origin}/admin/collections`, { active: true })
       }
     ],
     resources: [
@@ -41,28 +45,32 @@ const platforms = {
             label: 'Shopify Product [Alt + 3]',
             hotkey: '3',
             order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/admin/products/${platforms.shopify.page.resourceId}`, { active: true }),
-          },
+            action: () => GM_openInTab(`${window.location.origin}/admin/products/${platforms.shopify.page.resourceId}`, { active: true })
+          }
         ]
       },
       {
-        test: () => !!platforms.shopify.page && platforms.shopify.page.pageType === 'collection' && platforms.shopify.page.resourceId,
+        test: () => platforms.shopify.page && platforms.shopify.page.resourceId && platforms.shopify.page.pageType === 'collection',
         actions: [
           {
             label: 'Shopify Collection [Alt + 3]',
             hotkey: '3',
             order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/admin/collections/${platforms.shopify.page.resourceId}`, { active: true }),
-          },
-        ],
+            action: () => GM_openInTab(`${window.location.origin}/admin/collections/${platforms.shopify.page.resourceId}`, { active: true })
+          }
+        ]
       }
-    ],
+    ]
   },
   bigcommerce: {
-    test: () => window.unsafeWindow?.BCData && platforms.bigcommerce.nativeStoreId,
-    get nativeStoreId() {
+    test: () => window.unsafeWindow?.BCData && platforms.bigcommerce.storeHash,
+    _bcAdminBarParams: (() => {
+      const match = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/);
+      return match ? match[1].replace(/{.*?}/g, '{}').split(',').map(arg => arg.trim().replace(/^['"]|['"]$/g, '')) : null;
+    })(),
+    get storeHash() {
       return document
-        .querySelector("head link[href*='.bigcommerce.com/s-']") //liftsupportsdepot
+        .querySelector("head link[href*='.bigcommerce.com/s-']")
         ?.href?.split('s-')[1] || null;
     },
     get productId() {
@@ -70,44 +78,48 @@ const platforms = {
         window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
         null;
     },
+    get channelId() {
+      return this._bcAdminBarParams ? this._bcAdminBarParams[1] : null;
+    },
+    get categoryId() {
+      return this._bcAdminBarParams ? this._bcAdminBarParams[4] : null;
+    },
     general: [
       {
         label: 'BigCommerce Admin [Alt + 2]',
         hotkey: '2',
         order: 2,
-        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage`, { active: true }),
+        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage`, { active: true })
+      },
+      {
+        label: 'BigCommerce All Categories',
+        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories`, { active: true })
       }
     ],
     resources: [
       {
-        test: () => platforms.bigcommerce.nativeStoreId && platforms.bigcommerce.productId,
+        test: () => platforms.bigcommerce.storeHash && platforms.bigcommerce.productId,
         actions: [
           {
             label: 'BigCommerce Product [Alt + 3]',
             hotkey: '3',
             order: 3,
-            action: () => GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/edit/${platforms.bigcommerce.productId}`, { active: true }),
-          },
+            action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/edit/${platforms.bigcommerce.productId}`, { active: true })
+          }
         ]
       },
       {
-        test: () => platforms.bigcommerce.nativeStoreId,
-        actions: (() => {
-          const isProductPage = document.querySelector('input[name=product_id]')?.value ||
-            window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-          const label = isProductPage ? 'BigCommerce Categories' : 'BigCommerce Categories [Alt + 3]';
-          const hotkey = isProductPage ? null : '3';
-          return [
-            {
-              label,
-              hotkey,
-              order: 3,
-              action: () => GM_openInTab(`https://store-${platforms.bigcommerce.nativeStoreId}.mybigcommerce.com/manage/products/categories`, { active: true }),
-            },
-          ];
-        })(),
+        test: () => platforms.bigcommerce.storeHash && platforms.bigcommerce.categoryId && platforms.bigcommerce.channelId,
+        actions: [
+          {
+            label: 'BigCommerce Category [Alt + 3]',
+            hotkey: '3',
+            order: 3,
+            action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories/${platforms.bigcommerce.channelId}/edit/${platforms.bigcommerce.categoryId}`, { active: true })
+          }
+        ]
       }
-    ],
+    ]
   },
   woocommerce: {
     test: () => window.unsafeWindow?.woocommerce_params,
@@ -130,7 +142,11 @@ const platforms = {
         label: 'WooCommerce Admin [Alt + 2]',
         hotkey: '2',
         order: 2,
-        action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
+        action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true })
+      },
+      {
+        label: 'WooCommerce All Categories',
+        action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product`, { active: true })
       }
     ],
     resources: [
@@ -141,8 +157,8 @@ const platforms = {
             label: 'WooCommerce Product [Alt + 3]',
             hotkey: '3',
             order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${platforms.woocommerce.productId}&action=edit`, { active: true }),
-          },
+            action: () => GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${platforms.woocommerce.productId}&action=edit`, { active: true })
+          }
         ]
       },
       {
@@ -152,29 +168,28 @@ const platforms = {
             label: 'WooCommerce Category [Alt + 3]',
             hotkey: '3',
             order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${platforms.woocommerce.categoryName.replace(' ', '+')}`, { active: true }),
-          },
-        ],
+            action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${platforms.woocommerce.categoryName.replace(' ', '+')}`, { active: true })
+          }
+        ]
       },
       {
         test: () => platforms.woocommerce.categoryHandle,
         actions: [
           {
             label: 'WooCommerce Category Products',
-            action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit.php?product_cat=${platforms.woocommerce.categoryHandle}&post_type=product`, { active: true }),
-          },
-        ],
+            action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit.php?product_cat=${platforms.woocommerce.categoryHandle}&post_type=product`, { active: true })
+          }
+        ]
       }
-    ],
+    ]
   },
   shift4shop: {
     test: () => window.unsafeWindow?._3d_cart,
     get productId() {
-      return window.unsafeWindow?._3d_item?.catalogid ||
-        window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
+      return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
         null;
     },
-    get categoryId() {
+    get catalogId() { // both products and categories have catalog ID
       return window.unsafeWindow?.catID || null
     },
     get securityToken() {
@@ -193,16 +208,20 @@ const platforms = {
           onerror: function(error) {
            reject(error);
           }
-        });
-      });
+        })
+      })
     },
     general: [
       {
         label: 'Shift4Shop Admin [Alt + 2]',
         hotkey: '2',
         order: 2,
-        action: () => GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, { active: true }),
+        action: () => GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, { active: true })
       },
+      {
+        label: 'Shift4Shop All Categories',
+        action: () => GM_openInTab(`${window.location.origin}/admin/category_view.asp`, { active: true })
+      }
     ],
     resources: [
       {
@@ -213,31 +232,27 @@ const platforms = {
             hotkey: '3',
             order: 3,
             action: () => GM_openInTab(`${window.location.origin}/admin/iteminfo.asp?catid=${platforms.shift4shop.productId}&pannel=1`, { active: true }),
-          },
-        ],
+          }
+        ]
       },
       {
-        test: () => !isNaN(platforms.shift4shop.categoryId),
+        test: () => !platforms.shift4shop.productId && !isNaN(platforms.shift4shop.catalogId),
         actions: (() => {
-          const isProductPage = window.unsafeWindow?._3d_item?.catalogid ||
-            window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-          const label = isProductPage ? 'Shift4Shop Category' : 'Shift4Shop Category [Alt + 3]';
-          const hotkey = isProductPage ? null : '3';
           return [
             {
-              label,
-              hotkey,
+              label: 'Shift4Shop Category [Alt + 3]',
+              hotkey: '3',
               order: 3,
               action: async () => {
                 try {
                   const securityToken = await platforms.shift4shop.securityToken;
-                  GM_openInTab(`${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.categoryId}`, {active: true});
+                  GM_openInTab(`${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.catalogId}`, {active: true});
                 } catch (error) {
                   alert('Failed to get security token\nTry to log in to the store manager');
                   console.error('Failed to get security token:', error);
                 }
               }
-            },
+            }
           ];
         })(),
       }
@@ -260,13 +275,13 @@ const platforms = {
         label: 'Convermax Admin [Alt + 1]',
         hotkey: '1',
         order: 1,
-        action: () => GM_openInTab(`https://myconvermax.com/${platforms.common.storeId}/status`, { active: true }),
+        action: () => GM_openInTab(`https://myconvermax.com/${platforms.common.storeId}/status`, { active: true })
       },
       {
         hotkey: '`',
         ctrlKey: true,
-        action: () => GM_setClipboard(platforms.common.storeId),
-      },
+        action: () => GM_setClipboard(platforms.common.storeId)
+      }
     ],
     resources: [
       {
@@ -276,9 +291,9 @@ const platforms = {
             label: 'Fitment Chart [Alt + 4]',
             hotkey: '4',
             order: 4,
-            action: () => GM_openInTab(`https://${platforms.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${platforms.common.productId}&includeSource=true`, { active: true }),
-          },
-        ],
+            action: () => GM_openInTab(`https://${platforms.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${platforms.common.productId}&includeSource=true`, { active: true })
+          }
+        ]
       },
       {
         test: () => platforms.common.storeId && platforms.common.isFitmentSearch,
@@ -299,11 +314,11 @@ const platforms = {
               } else {
                 alert('Convermax Tools: No vehicle selected!');
               }
-            },
-          },
-        ],
-      },
-    ],
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 
