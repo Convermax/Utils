@@ -193,23 +193,36 @@ const platforms = {
       return window.unsafeWindow?.catID || null
     },
     get securityToken() {
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
+        const storeUrl = window.location.origin;
+        const tokenKey = `shift4shop_security_token_${storeUrl}`;
+        const timestampKey = `shift4shop_token_timestamp_${storeUrl}`;
+
+        const cachedToken = GM_getValue(tokenKey);
+        const tokenTimestamp = GM_getValue(timestampKey);
+        const tokenExpiry = 24 * 60 * 60 * 1000;
+        if (cachedToken && tokenTimestamp && (Date.now() - tokenTimestamp < tokenExpiry)) {
+          return resolve(cachedToken);
+        }
+
         GM_xmlhttpRequest({
           method: "GET",
-          url: `${window.location.origin}/admin/category_view.asp`,
+          url: `${storeUrl}/admin/category_view.asp`,
           onload: function(response) {
             const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
             if (tokenMatch && tokenMatch[1]) {
+              GM_setValue(tokenKey, tokenMatch[1]);
+              GM_setValue(timestampKey, Date.now());
               resolve(tokenMatch[1]);
             } else {
               reject(new Error('Security token not found in the response.'));
-           }
+            }
           },
           onerror: function(error) {
-           reject(error);
+            reject(error);
           }
-        })
-      })
+        });
+      });
     },
     general: [
       {
