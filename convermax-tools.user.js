@@ -484,8 +484,7 @@ function setupPermissionsButton() {
 
     const textArea = document.querySelector('textarea#PolarisTextField2');
     if (textArea) {
-      textArea.value = 'We’re the Convermax team and would love access to your Shopify store to help with our app integration.' +
-        '\nLet us know if you need any details.';
+      textArea.value = 'Convermax Team: Requesting access to help you with our app.';
       textArea.dispatchEvent(new Event('input', { bubbles: true }));
     }
   });
