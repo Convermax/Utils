@@ -332,7 +332,6 @@ async function registerCommandsAndHotKeys() {
   Object.values(platforms).forEach(platform => {
     if (platform.test && !platform.test()) return;
     platform.general.forEach(action => commands.push(action));
-
     platform.resources.forEach(resource => {
       if (resource.test && !resource.test()) return;
       resource.actions.forEach(action => commands.push(action));
@@ -455,7 +454,6 @@ function setupPermissionsButton() {
   ];
 
   const targetButton = document.querySelector('#create-new-store-button');
-  if (!targetButton) return;
 
   const button = document.createElement('button');
   button.textContent = 'Select permissions';
@@ -482,13 +480,15 @@ function setupPermissionsButton() {
   targetButton.parentNode.insertBefore(button, targetButton.nextSibling);
 }
 
-
 (function () {
   'use strict';
 
   bypassShopifyPassword();
 
-  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(async function () {
+  ensureContextIsSet(() =>
+    window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData || window.unsafeWindow?.woocommerce_params || window.unsafeWindow?._3d_cart,
+    10000
+  ).then(async function () {
     await registerCommandsAndHotKeys();
   });
 
@@ -500,6 +500,8 @@ function setupPermissionsButton() {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
   }
   if (url.startsWith('https://partners.shopify.com/')) {
-    setTimeout(setupPermissionsButton, 1000);
+    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(function() {
+      setupPermissionsButton();
+    });
   }
 })();
