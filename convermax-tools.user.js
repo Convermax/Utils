@@ -28,7 +28,7 @@ const actions = {
       },
       general: [
         {
-          label: 'Shopify Themes [Alt + 1]',
+          label: 'Shopify Themes',
           hotkey: '1',
           order: 1,
           action: () =>
@@ -52,7 +52,7 @@ const actions = {
             actions.platforms.shopify.page.pageType === 'product',
           actions: [
             {
-              label: 'Shopify Product [Alt + 2]',
+              label: 'Shopify Product',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -70,7 +70,7 @@ const actions = {
             actions.platforms.shopify.page.pageType === 'collection',
           actions: [
             {
-              label: 'Shopify Collection [Alt + 2]',
+              label: 'Shopify Collection',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -105,7 +105,7 @@ const actions = {
       },
       general: [
         {
-          label: 'BigCommerce Admin [Alt + 1]',
+          label: 'BigCommerce Admin',
           hotkey: '1',
           order: 1,
           action: () =>
@@ -130,7 +130,7 @@ const actions = {
           test: () => actions.platforms.bigcommerce.storeHash && actions.platforms.bigcommerce.productId,
           actions: [
             {
-              label: 'BigCommerce Product [Alt + 2]',
+              label: 'BigCommerce Product',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -148,7 +148,7 @@ const actions = {
             actions.platforms.bigcommerce.categoryId,
           actions: [
             {
-              label: 'BigCommerce Category [Alt + 2]',
+              label: 'BigCommerce Category',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -178,7 +178,7 @@ const actions = {
       },
       general: [
         {
-          label: 'WooCommerce Admin [Alt + 1]',
+          label: 'WooCommerce Admin',
           hotkey: '1',
           order: 1,
           action: () =>
@@ -198,7 +198,7 @@ const actions = {
           test: () => actions.platforms.woocommerce.productId,
           actions: [
             {
-              label: 'WooCommerce Product [Alt + 2]',
+              label: 'WooCommerce Product',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -213,7 +213,7 @@ const actions = {
           test: () => actions.platforms.woocommerce.categoryName,
           actions: [
             {
-              label: 'WooCommerce Category [Alt + 2]',
+              label: 'WooCommerce Category',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -283,7 +283,7 @@ const actions = {
       },
       general: [
         {
-          label: 'Shift4Shop Admin [Alt + 1]',
+          label: 'Shift4Shop Admin',
           hotkey: '1',
           order: 1,
           action: () =>
@@ -304,7 +304,7 @@ const actions = {
           test: () => actions.platforms.shift4shop.productId,
           actions: [
             {
-              label: 'Shift4Shop Product [Alt + 2]',
+              label: 'Shift4Shop Product',
               hotkey: '2',
               order: 2,
               action: () =>
@@ -320,7 +320,7 @@ const actions = {
             !actions.platforms.shift4shop.productId && !isNaN(actions.platforms.shift4shop.catalogId),
           actions: [
             {
-              label: 'Shift4Shop Category [Alt + 2]',
+              label: 'Shift4Shop Category',
               hotkey: '2',
               order: 2,
               action: () => {
@@ -361,7 +361,7 @@ const actions = {
     },
     general: [
       {
-        label: 'Convermax Admin [Alt + 3]',
+        label: 'Convermax Admin',
         hotkey: '3',
         order: 3,
         action: () =>
@@ -378,7 +378,7 @@ const actions = {
         test: () => actions.common.storeId && actions.common.isFitmentSearch && actions.common.productId,
         actions: [
           {
-            label: 'Fitment Chart [Alt + 4]',
+            label: 'Fitment Chart',
             hotkey: '4',
             order: 4,
             action: () =>
@@ -393,7 +393,7 @@ const actions = {
         test: () => actions.common.storeId && actions.common.isFitmentSearch,
         actions: [
           {
-            label: 'Vehicle Info [Alt + 5]',
+            label: 'Vehicle Info',
             hotkey: '5',
             order: 5,
             action: () => {
@@ -418,7 +418,10 @@ function registerActions(commands) {
   commands
     .filter(({ label }) => label)
     .sort((a, b) => (a.order || 9) - (b.order || 9))
-    .forEach(({ label, action }) => GM_registerMenuCommand(label, action));
+    .forEach(({ hotkey, ctrlKey, label, action }) => {
+      const hotkeyStr = ` [${ctrlKey ? 'Ctrl' : 'Alt'} + ${hotkey}]`;
+      return GM_registerMenuCommand(`${label}${hotkey ? hotkeyStr : ''}`, action);
+    });
   commands
     .filter(({ hotkey }) => hotkey)
     .forEach(({ hotkey, ctrlKey, action }) => {
