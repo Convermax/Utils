@@ -19,265 +19,353 @@
 // ==/UserScript==
 /* eslint-disable no-console, no-undef, camelcase */
 
-const platforms = {
-  shopify: {
-    test: () => window.unsafeWindow?.Shopify || window.location.origin === "https://admin.shopify.com",
-    get page() {
-      return window.unsafeWindow?.ShopifyAnalytics?.meta?.page || null;
-    },
-    general: [
-      {
-        label: 'Shopify Themes [Alt + 2]',
-        hotkey: '2',
-        order: 2,
-        action: () => GM_openInTab(`${window.location.origin}/admin/themes`, { active: true })
+const actions = {
+  platforms: {
+    shopify: {
+      test: () => window.unsafeWindow?.Shopify || window.location.origin === 'https://admin.shopify.com',
+      get page() {
+        return window.unsafeWindow?.ShopifyAnalytics?.meta?.page || null;
       },
-      {
-        label: 'Shopify All Collections',
-        action: () => GM_openInTab(`${window.location.origin}/admin/collections`, { active: true })
-      }
-    ],
-    resources: [
-      {
-        test: () => platforms.shopify.page && platforms.shopify.page.resourceId && platforms.shopify.page.pageType === 'product',
-        actions: [
-          {
-            label: 'Shopify Product [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/admin/products/${platforms.shopify.page.resourceId}`, { active: true })
-          }
-        ]
-      },
-      {
-        test: () => platforms.shopify.page && platforms.shopify.page.resourceId && platforms.shopify.page.pageType === 'collection',
-        actions: [
-          {
-            label: 'Shopify Collection [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/admin/collections/${platforms.shopify.page.resourceId}`, { active: true })
-          }
-        ]
-      }
-    ]
-  },
-  bigcommerce: {
-    test: () => window.unsafeWindow?.BCData && platforms.bigcommerce.storeHash,
-    _bcAdminBarParams: (() => {
-      const match = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/);
-      return match ? match[1].replace(/{.*?}/g, '{}').split(',').map(arg => arg.trim().replace(/^['"]|['"]$/g, '')) : null;
-    })(),
-    get storeHash() {
-      return document
-        .querySelector("head link[href*='.bigcommerce.com/s-']")
-        ?.href?.split('s-')[1] || null;
-    },
-    get productId() {
-      return document.querySelector('input[name=product_id]')?.value ||
-        window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-        null;
-    },
-    get channelId() {
-      return this._bcAdminBarParams ? this._bcAdminBarParams[1] : null;
-    },
-    get categoryId() {
-      return this._bcAdminBarParams ? this._bcAdminBarParams[4] : null;
-    },
-    general: [
-      {
-        label: 'BigCommerce Admin [Alt + 2]',
-        hotkey: '2',
-        order: 2,
-        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage`, { active: true })
-      },
-      {
-        label: 'BigCommerce All Categories',
-        action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories`, { active: true })
-      }
-    ],
-    resources: [
-      {
-        test: () => platforms.bigcommerce.storeHash && platforms.bigcommerce.productId,
-        actions: [
-          {
-            label: 'BigCommerce Product [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/edit/${platforms.bigcommerce.productId}`, { active: true })
-          }
-        ]
-      },
-      {
-        test: () => platforms.bigcommerce.storeHash && platforms.bigcommerce.categoryId && platforms.bigcommerce.channelId,
-        actions: [
-          {
-            label: 'BigCommerce Category [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`https://store-${platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories/${platforms.bigcommerce.channelId}/edit/${platforms.bigcommerce.categoryId}`, { active: true })
-          }
-        ]
-      }
-    ]
-  },
-  woocommerce: {
-    test: () => window.unsafeWindow?.woocommerce_params,
-    get productId() {
-      return window.unsafeWindow?.cm_product?.[0] ||
-        document.querySelector('button[name="add-to-cart"]')?.value ||
-        window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-        null;
-    },
-    get categoryName() {
-      return window.unsafeWindow?.cm_category;
-    },
-    get categoryHandle() {
-      return window.location.pathname.includes('/product-category/')
-        ? window.location.pathname.replace('/product-category/', '')
-        : '';
-    },
-    general: [
-      {
-        label: 'WooCommerce Admin [Alt + 2]',
-        hotkey: '2',
-        order: 2,
-        action: () => GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true })
-      },
-      {
-        label: 'WooCommerce All Categories',
-        action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product`, { active: true })
-      }
-    ],
-    resources: [
-      {
-        test: () => platforms.woocommerce.productId,
-        actions: [
-          {
-            label: 'WooCommerce Product [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${platforms.woocommerce.productId}&action=edit`, { active: true })
-          }
-        ]
-      },
-      {
-        test: () => platforms.woocommerce.categoryName,
-        actions: [
-          {
-            label: 'WooCommerce Category [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${platforms.woocommerce.categoryName.replace(' ', '+')}`, { active: true })
-          }
-        ]
-      },
-      {
-        test: () => platforms.woocommerce.categoryHandle,
-        actions: [
-          {
-            label: 'WooCommerce Category Products',
-            action: () => GM_openInTab(`${window.location.origin}/wp-admin/edit.php?product_cat=${platforms.woocommerce.categoryHandle}&post_type=product`, { active: true })
-          }
-        ]
-      }
-    ]
-  },
-  shift4shop: {
-    test: () => window.unsafeWindow?._3d_cart,
-    get productId() {
-      return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-        null;
-    },
-    get catalogId() { // both products and categories have catalog ID
-      return window.unsafeWindow?.catID || null
-    },
-    get securityToken() {
-      return new Promise(async (resolve, reject) => {
-        const storeUrl = window.location.origin;
-        const tokenKey = `shift4shop_security_token_${storeUrl}`;
-        const timestampKey = `shift4shop_token_timestamp_${storeUrl}`;
-
-        const cachedToken = GM_getValue(tokenKey);
-        const tokenTimestamp = GM_getValue(timestampKey);
-        const tokenExpiry = 24 * 60 * 60 * 1000;
-        if (cachedToken && tokenTimestamp && (Date.now() - tokenTimestamp < tokenExpiry)) {
-          return resolve(cachedToken);
-        }
-
-        GM_xmlhttpRequest({
-          method: "GET",
-          url: `${storeUrl}/admin/category_view.asp`,
-          onload: function(response) {
-            const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
-            if (tokenMatch && tokenMatch[1]) {
-              GM_setValue(tokenKey, tokenMatch[1]);
-              GM_setValue(timestampKey, Date.now());
-              resolve(tokenMatch[1]);
-            } else {
-              reject(new Error('Security token not found in the response.'));
-            }
-          },
-          onerror: function(error) {
-            reject(error);
-          }
-        });
-      });
-    },
-    general: [
-      {
-        label: 'Shift4Shop Admin [Alt + 2]',
-        hotkey: '2',
-        order: 2,
-        action: () => GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, { active: true })
-      },
-      {
-        label: 'Shift4Shop All Categories',
-        action: () => GM_openInTab(`${window.location.origin}/admin/category_view.asp`, { active: true })
-      }
-    ],
-    resources: [
-      {
-        test: () => platforms.shift4shop.productId,
-        actions: [
-          {
-            label: 'Shift4Shop Product [Alt + 3]',
-            hotkey: '3',
-            order: 3,
-            action: () => GM_openInTab(`${window.location.origin}/admin/iteminfo.asp?catid=${platforms.shift4shop.productId}&pannel=1`, { active: true }),
-          }
-        ]
-      },
-      {
-        test: () => !platforms.shift4shop.productId && !isNaN(platforms.shift4shop.catalogId),
-        actions: (() => {
-          return [
+      general: [
+        {
+          label: 'Shopify Themes [Alt + 1]',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/themes`, {
+              active: true,
+            }),
+        },
+        {
+          label: 'Shopify All Collections',
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/collections`, {
+              active: true,
+            }),
+        },
+      ],
+      resources: [
+        {
+          test: () =>
+            actions.platforms.shopify.page &&
+            actions.platforms.shopify.page.resourceId &&
+            actions.platforms.shopify.page.pageType === 'product',
+          actions: [
             {
-              label: 'Shift4Shop Category [Alt + 3]',
-              hotkey: '3',
-              order: 3,
-              action: async () => {
-                try {
-                  const securityToken = await platforms.shift4shop.securityToken;
-                  GM_openInTab(`${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${platforms.shift4shop.catalogId}`, {active: true});
-                } catch (error) {
-                  alert('Failed to get security token\nTry to log in to the store manager');
-                  console.error('Failed to get security token:', error);
-                }
+              label: 'Shopify Product [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/admin/products/${actions.platforms.shopify.page.resourceId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.shopify.page &&
+            actions.platforms.shopify.page.resourceId &&
+            actions.platforms.shopify.page.pageType === 'collection',
+          actions: [
+            {
+              label: 'Shopify Collection [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/admin/collections/${actions.platforms.shopify.page.resourceId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+      ],
+    },
+    bigcommerce: {
+      test: () => window.unsafeWindow?.BCData && actions.platforms.bigcommerce.storeHash,
+      _bcAdminBarParams: (() => {
+        const match = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/);
+        return match
+          ? match[1]
+              .replace(/{.*?}/g, '{}')
+              .split(',')
+              .map((arg) => arg.trim().replace(/^['"]|['"]$/g, ''))
+          : null;
+      })(),
+      get storeHash() {
+        return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1] || null;
+      },
+      get productId() {
+        return (
+          document.querySelector('input[name=product_id]')?.value ||
+          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
+          null
+        );
+      },
+      get channelId() {
+        return this._bcAdminBarParams ? this._bcAdminBarParams[1] : null;
+      },
+      get categoryId() {
+        return this._bcAdminBarParams ? this._bcAdminBarParams[4] : null;
+      },
+      general: [
+        {
+          label: 'BigCommerce Admin [Alt + 1]',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(
+              `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage`,
+              {
+                active: true,
+              },
+            ),
+        },
+        {
+          label: 'BigCommerce All Categories',
+          action: () =>
+            GM_openInTab(
+              `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories`,
+              { active: true },
+            ),
+        },
+      ],
+      resources: [
+        {
+          test: () => actions.platforms.bigcommerce.storeHash && actions.platforms.bigcommerce.productId,
+          actions: [
+            {
+              label: 'BigCommerce Product [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/edit/${actions.platforms.bigcommerce.productId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.bigcommerce.storeHash &&
+            actions.platforms.bigcommerce.categoryId &&
+            actions.platforms.bigcommerce.channelId,
+          actions: [
+            {
+              label: 'BigCommerce Category [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories/${actions.platforms.bigcommerce.channelId}/edit/${actions.platforms.bigcommerce.categoryId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+      ],
+    },
+    woocommerce: {
+      test: () => window.unsafeWindow?.woocommerce_params,
+      get productId() {
+        return (
+          window.unsafeWindow?.cm_product?.[0] ||
+          document.querySelector('button[name="add-to-cart"]')?.value ||
+          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
+          null
+        );
+      },
+      get categoryName() {
+        return window.unsafeWindow?.cm_category;
+      },
+      get categoryHandle() {
+        return window.location.pathname.includes('/product-category/')
+          ? window.location.pathname.replace('/product-category/', '')
+          : '';
+      },
+      general: [
+        {
+          label: 'WooCommerce Admin [Alt + 1]',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
+        },
+        {
+          label: 'WooCommerce All Categories',
+          action: () =>
+            GM_openInTab(
+              `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product`,
+              { active: true },
+            ),
+        },
+      ],
+      resources: [
+        {
+          test: () => actions.platforms.woocommerce.productId,
+          actions: [
+            {
+              label: 'WooCommerce Product [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/wp-admin/post.php?post=${actions.platforms.woocommerce.productId}&action=edit`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () => actions.platforms.woocommerce.categoryName,
+          actions: [
+            {
+              label: 'WooCommerce Category [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${
+                    window.location.origin
+                  }/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${actions.platforms.woocommerce.categoryName.replace(
+                    ' ',
+                    '+',
+                  )}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () => actions.platforms.woocommerce.categoryHandle,
+          actions: [
+            {
+              label: 'WooCommerce Category Products',
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/wp-admin/edit.php?product_cat=${actions.platforms.woocommerce.categoryHandle}&post_type=product`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+      ],
+    },
+    shift4shop: {
+      test: () => window.unsafeWindow?._3d_cart,
+      get productId() {
+        return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
+      },
+      get catalogId() {
+        // both products and categories have catalog ID
+        return window.unsafeWindow?.catID || null;
+      },
+      get securityToken() {
+        return new Promise(async (resolve, reject) => {
+          const storeUrl = window.location.origin;
+          const tokenKey = `shift4shop_security_token_${storeUrl}`;
+          const timestampKey = `shift4shop_token_timestamp_${storeUrl}`;
+
+          const cachedToken = GM_getValue(tokenKey);
+          const tokenTimestamp = GM_getValue(timestampKey);
+          const tokenExpiry = 24 * 60 * 60 * 1000;
+          if (cachedToken && tokenTimestamp && Date.now() - tokenTimestamp < tokenExpiry) {
+            return resolve(cachedToken);
+          }
+
+          GM_xmlhttpRequest({
+            method: 'GET',
+            url: `${storeUrl}/admin/category_view.asp`,
+            onload(response) {
+              const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
+              if (tokenMatch && tokenMatch[1]) {
+                GM_setValue(tokenKey, tokenMatch[1]);
+                GM_setValue(timestampKey, Date.now());
+                resolve(tokenMatch[1]);
+              } else {
+                reject(new Error('Security token not found in the response.'));
               }
-            }
-          ];
-        })(),
-      }
-    ],
+            },
+            onerror(error) {
+              reject(error);
+            },
+          });
+        });
+      },
+      general: [
+        {
+          label: 'Shift4Shop Admin [Alt + 1]',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, {
+              active: true,
+            }),
+        },
+        {
+          label: 'Shift4Shop All Categories',
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/category_view.asp`, {
+              active: true,
+            }),
+        },
+      ],
+      resources: [
+        {
+          test: () => actions.platforms.shift4shop.productId,
+          actions: [
+            {
+              label: 'Shift4Shop Product [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/admin/iteminfo.asp?catid=${actions.platforms.shift4shop.productId}&pannel=1`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            !actions.platforms.shift4shop.productId && !isNaN(actions.platforms.shift4shop.catalogId),
+          actions: (() => {
+            return [
+              {
+                label: 'Shift4Shop Category [Alt + 2]',
+                hotkey: '2',
+                order: 2,
+                action: async () => {
+                  try {
+                    const securityToken = await actions.platforms.shift4shop.securityToken;
+                    GM_openInTab(
+                      `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${actions.platforms.shift4shop.catalogId}`,
+                      { active: true },
+                    );
+                  } catch (error) {
+                    alert('Failed to get security token\nTry to log in to the store manager');
+                    console.error('Failed to get security token:', error);
+                  }
+                },
+              },
+            ];
+          })(),
+        },
+      ],
+    },
   },
   common: {
-    test: () => platforms.common.storeId,
+    test: () => actions.common.storeId,
     get storeId() {
-      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-        ?.replace('https://', '')
-        ?.replace('.myconvermax.com', '')
-        ?.replace('client.convermax.com/', '') || null;
+      return (
+        window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+          ?.replace('https://', '')
+          ?.replace('.myconvermax.com', '')
+          ?.replace('client.convermax.com/', '') || null
+      );
     },
     get productId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
@@ -290,31 +378,36 @@ const platforms = {
     },
     general: [
       {
-        label: 'Convermax Admin [Alt + 1]',
-        hotkey: '1',
-        order: 1,
-        action: () => GM_openInTab(`https://myconvermax.com/${platforms.common.storeId}/status`, { active: true })
+        label: 'Convermax Admin [Alt + 3]',
+        hotkey: '3',
+        order: 3,
+        action: () =>
+          GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
       },
       {
         hotkey: '`',
         ctrlKey: true,
-        action: () => GM_setClipboard(platforms.common.storeId)
-      }
+        action: () => GM_setClipboard(actions.common.storeId),
+      },
     ],
     resources: [
       {
-        test: () => platforms.common.storeId && platforms.common.isFitmentSearch && platforms.common.productId,
+        test: () => actions.common.storeId && actions.common.isFitmentSearch && actions.common.productId,
         actions: [
           {
             label: 'Fitment Chart [Alt + 4]',
             hotkey: '4',
             order: 4,
-            action: () => GM_openInTab(`https://${platforms.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${platforms.common.productId}&includeSource=true`, { active: true })
-          }
-        ]
+            action: () =>
+              GM_openInTab(
+                `https://${actions.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${actions.common.productId}&includeSource=true`,
+                { active: true },
+              ),
+          },
+        ],
       },
       {
-        test: () => platforms.common.storeId && platforms.common.isFitmentSearch,
+        test: () => actions.common.storeId && actions.common.isFitmentSearch,
         actions: [
           {
             label: 'Vehicle Info [Alt + 5]',
@@ -322,8 +415,8 @@ const platforms = {
             order: 5,
             action: () => {
               if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
-                const vehicle = platforms.common.vehicle;
-                const url = new URL(`https://${platforms.common.storeId}.myconvermax.com/ymm/vehicleinfo.html`);
+                const { vehicle } = actions.common;
+                const url = new URL(`https://${actions.common.storeId}.myconvermax.com/ymm/vehicleinfo.html`);
                 for (const [key, value] of Object.entries(vehicle)) {
                   url.searchParams.set(key, value);
                 }
@@ -331,26 +424,15 @@ const platforms = {
               } else {
                 alert('Convermax Tools: No vehicle selected!');
               }
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
+            },
+          },
+        ],
+      },
+    ],
+  },
+};
 
-async function registerCommandsAndHotKeys() {
-  const commands = [];
-
-  Object.values(platforms).forEach(platform => {
-    if (platform.test && !platform.test()) return;
-    platform.general.forEach(action => commands.push(action));
-    platform.resources.forEach(resource => {
-      if (resource.test && !resource.test()) return;
-      resource.actions.forEach(action => commands.push(action));
-    });
-  });
-
+function registerActions(commands) {
   commands
     .filter(({ label }) => label)
     .sort((a, b) => (a.order || 9) - (b.order || 9))
@@ -359,13 +441,37 @@ async function registerCommandsAndHotKeys() {
     .filter(({ hotkey }) => hotkey)
     .forEach(({ hotkey, ctrlKey, action }) => {
       document.addEventListener('keydown', (e) => {
-        if (!e.shiftKey && e.key === hotkey &&
-          (ctrlKey && e.ctrlKey && !e.altKey || !ctrlKey && !e.ctrlKey && e.altKey)) {
+        if (
+          !e.shiftKey &&
+          e.key === hotkey &&
+          ((ctrlKey && e.ctrlKey && !e.altKey) || (!ctrlKey && !e.ctrlKey && e.altKey))
+        ) {
           e.preventDefault();
           action();
         }
       });
     });
+}
+
+async function registerPlatformActions() {
+  const platform = Object.values(actions.platforms).find((p) => p.test());
+
+  if (platform) {
+    const commands = [
+      ...platform.general,
+      ...platform.resources.filter((r) => r.test()).flatMap((r) => r.actions),
+    ];
+    registerActions(commands);
+  }
+}
+
+function registerCommonActions() {
+  const commands = [
+    ...actions.common.general,
+    ...actions.common.resources.filter((r) => r.test()).flatMap((r) => r.actions),
+  ];
+
+  registerActions(commands);
 }
 
 function isShopifyAdminFixTimeoutExpired() {
@@ -460,10 +566,11 @@ function setupPermissionsButton() {
     'metaobjects_edit',
     'metaobject_definitions_delete',
     'metaobjects_delete',
-    'applications', 'themes',
+    'applications',
+    'themes',
     'edit_theme_code',
     'pages',
-    'links'
+    'links',
   ];
 
   const targetButton = document.querySelector('#create-new-store-button');
@@ -475,7 +582,7 @@ function setupPermissionsButton() {
   button.setAttribute('type', 'button');
 
   button.addEventListener('click', () => {
-    requiredPermissions.forEach(permission => {
+    requiredPermissions.forEach((permission) => {
       const checkbox = document.querySelector(`input#${permission}.Polaris-Checkbox__Input`);
       if (checkbox && !checkbox.checked) {
         checkbox.click();
@@ -497,11 +604,19 @@ function setupPermissionsButton() {
 
   bypassShopifyPassword();
 
-  ensureContextIsSet(() =>
-    window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData || window.unsafeWindow?.woocommerce_params || window.unsafeWindow?._3d_cart,
-    10000
+  ensureContextIsSet(
+    () =>
+      window.unsafeWindow?.Shopify ||
+      window.unsafeWindow?.BCData ||
+      window.unsafeWindow?.woocommerce_params ||
+      window.unsafeWindow?._3d_cart,
+    10000,
   ).then(async function () {
-    await registerCommandsAndHotKeys();
+    await registerPlatformActions();
+  });
+
+  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
+    registerCommonActions();
   });
 
   const url = window.location.href;
@@ -512,7 +627,7 @@ function setupPermissionsButton() {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
   }
   if (url.startsWith('https://partners.shopify.com/')) {
-    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(function() {
+    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(function () {
       setupPermissionsButton();
     });
   }
