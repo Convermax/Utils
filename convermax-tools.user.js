@@ -88,8 +88,8 @@ const actions = {
       // When logged in to the store admin BC renders JS with admin bar init even if it's hidden,
       // we parse those init params to get channelId and categoryId
       _bcAdminBarParams: (() => {
-        const paramsStr = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/);
-        return paramsStr?.[1]?.split(/',\s+'/);
+        const paramsStr = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/)?.[1];
+        return paramsStr?.split(/',\s+'/);
       })(),
       get storeHash() {
         return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1] || null;
