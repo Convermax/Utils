@@ -397,10 +397,9 @@ const actions = {
             hotkey: '5',
             order: 5,
             action: () => {
-              if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
-                const { vehicle } = actions.common;
+              if (actions.common.vehicle) {
                 const url = new URL(`https://${actions.common.storeId}.myconvermax.com/ymm/vehicleinfo.html`);
-                for (const [key, value] of Object.entries(vehicle)) {
+                for (const [key, value] of Object.entries(actions.common.vehicle)) {
                   url.searchParams.set(key, value);
                 }
                 GM_openInTab(url.href, { active: true });
