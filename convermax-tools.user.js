@@ -37,7 +37,9 @@ const actions = {
             }),
         },
         {
-          label: 'Shopify All Collections',
+          label: 'Shopify All Collections [Alt + 3]',
+          hotkey: '3',
+          order: 3,
           action: () =>
             GM_openInTab(`${window.location.origin}/admin/collections`, {
               active: true,
@@ -117,7 +119,9 @@ const actions = {
             ),
         },
         {
-          label: 'BigCommerce All Categories',
+          label: 'BigCommerce All Categories [Alt + 3]',
+          hotkey: '3',
+          order: 3,
           action: () =>
             GM_openInTab(
               `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories`,
@@ -185,7 +189,9 @@ const actions = {
             GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
         },
         {
-          label: 'WooCommerce All Categories',
+          label: 'WooCommerce All Categories [Alt + 3]',
+          hotkey: '3',
+          order: 3,
           action: () =>
             GM_openInTab(
               `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product`,
@@ -292,7 +298,9 @@ const actions = {
             }),
         },
         {
-          label: 'Shift4Shop All Categories',
+          label: 'Shift4Shop All Categories [Alt + 3]',
+          hotkey: '3',
+          order: 3,
           action: () =>
             GM_openInTab(`${window.location.origin}/admin/category_view.asp`, {
               active: true,
@@ -361,9 +369,9 @@ const actions = {
     },
     general: [
       {
-        label: 'Convermax Admin [Alt + 3]',
-        hotkey: '3',
-        order: 3,
+        label: 'Convermax Admin [Alt + 4]',
+        hotkey: '4',
+        order: 4,
         action: () =>
           GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
       },
@@ -378,9 +386,9 @@ const actions = {
         test: () => actions.common.storeId && actions.common.isFitmentSearch && actions.common.productId,
         actions: [
           {
-            label: 'Fitment Chart [Alt + 4]',
-            hotkey: '4',
-            order: 4,
+            label: 'Fitment Chart [Alt + 5]',
+            hotkey: '5',
+            order: 5,
             action: () =>
               GM_openInTab(
                 `https://${actions.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${actions.common.productId}&includeSource=true`,
@@ -393,9 +401,9 @@ const actions = {
         test: () => actions.common.storeId && actions.common.isFitmentSearch,
         actions: [
           {
-            label: 'Vehicle Info [Alt + 5]',
-            hotkey: '5',
-            order: 5,
+            label: 'Vehicle Info [Alt + 6]',
+            hotkey: '6',
+            order: 6,
             action: () => {
               if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
                 const { vehicle } = actions.common;
