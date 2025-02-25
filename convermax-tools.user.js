@@ -24,7 +24,7 @@ const actions = {
     shopify: {
       test: () => window.unsafeWindow?.Shopify || window.location.origin === 'https://admin.shopify.com',
       get page() {
-        return window.unsafeWindow?.ShopifyAnalytics?.meta?.page || null;
+        return window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
       },
       general: [
         {
@@ -92,14 +92,10 @@ const actions = {
         return paramsStr?.split(/',\s+'/);
       })(),
       get storeHash() {
-        return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1] || null;
+        return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
       },
       get productId() {
-        return (
-          document.querySelector('input[name=product_id]')?.value ||
-          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-          null
-        );
+        return document.querySelector('input[name=product_id]')?.value;
       },
       get channelId() {
         return this._bcAdminBarParams?.[1];
@@ -169,10 +165,7 @@ const actions = {
       test: () => window.unsafeWindow?.woocommerce_params,
       get productId() {
         return (
-          window.unsafeWindow?.cm_product?.[0] ||
-          document.querySelector('button[name="add-to-cart"]')?.value ||
-          window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId ||
-          null
+          window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value
         );
       },
       get categoryName() {
@@ -225,12 +218,7 @@ const actions = {
               order: 2,
               action: () =>
                 GM_openInTab(
-                  `${
-                    window.location.origin
-                  }/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${actions.platforms.woocommerce.categoryName.replace(
-                    ' ',
-                    '+',
-                  )}`,
+                  `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${actions.platforms.woocommerce.categoryName.replace(' ', '+')}`,
                   { active: true },
                 ),
             },
@@ -254,12 +242,13 @@ const actions = {
     shift4shop: {
       test: () => window.unsafeWindow?._3d_cart,
       get productId() {
-        return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
+        return window.unsafeWindow?._3d_item?.catalogid;
       },
       get catalogId() {
         // both products and categories have catalog ID
-        return window.unsafeWindow?.catID || null;
+        return window.unsafeWindow?.catID;
       },
+      // Shouldn't be called without explicit user intent
       get securityToken() {
         return new Promise((resolve, reject) => {
           const storeUrl = window.location.origin;
