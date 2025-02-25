@@ -329,28 +329,26 @@ const actions = {
         {
           test: () =>
             !actions.platforms.shift4shop.productId && !isNaN(actions.platforms.shift4shop.catalogId),
-          actions: (() => {
-            return [
-              {
-                label: 'Shift4Shop Category [Alt + 2]',
-                hotkey: '2',
-                order: 2,
-                action: () => {
-                  actions.platforms.shift4shop.securityToken
-                    .then((securityToken) => {
-                      GM_openInTab(
-                        `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${actions.platforms.shift4shop.catalogId}`,
-                        { active: true },
-                      );
-                    })
-                    .catch((error) => {
-                      alert('Failed to get security token\nTry to log in to the store manager');
-                      console.error('Failed to get security token:', error);
-                    });
-                },
+          actions: [
+            {
+              label: 'Shift4Shop Category [Alt + 2]',
+              hotkey: '2',
+              order: 2,
+              action: () => {
+                actions.platforms.shift4shop.securityToken
+                  .then((securityToken) => {
+                    GM_openInTab(
+                      `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${actions.platforms.shift4shop.catalogId}`,
+                      { active: true },
+                    );
+                  })
+                  .catch((error) => {
+                    alert('Failed to get security token\nTry to log in to the store manager');
+                    console.error('Failed to get security token:', error);
+                  });
               },
-            ];
-          })(),
+            },
+          ],
         },
       ],
     },
@@ -358,15 +356,13 @@ const actions = {
   common: {
     test: () => actions.common.storeId,
     get storeId() {
-      return (
-        window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-          ?.replace('https://', '')
-          ?.replace('.myconvermax.com', '')
-          ?.replace('client.convermax.com/', '') || null
-      );
+      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+        ?.replace('https://', '')
+        ?.replace('.myconvermax.com', '')
+        ?.replace('client.convermax.com/', '');
     },
     get productId() {
-      return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId || null;
+      return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
     },
     get isFitmentSearch() {
       return !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
@@ -464,12 +460,13 @@ async function registerPlatformActions() {
 }
 
 function registerCommonActions() {
-  const commands = [
-    ...actions.common.general,
-    ...actions.common.resources.filter((r) => r.test()).flatMap((r) => r.actions),
-  ];
-
-  registerActions(commands);
+  if (actions.common.test()) {
+    const commands = [
+      ...actions.common.general,
+      ...actions.common.resources.filter((r) => r.test()).flatMap((r) => r.actions),
+    ];
+    registerActions(commands);
+  }
 }
 
 function isShopifyAdminFixTimeoutExpired() {
