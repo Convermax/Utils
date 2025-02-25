@@ -261,7 +261,7 @@ const actions = {
         return window.unsafeWindow?.catID || null;
       },
       get securityToken() {
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
           const storeUrl = window.location.origin;
           const tokenKey = `shift4shop_security_token_${storeUrl}`;
           const timestampKey = `shift4shop_token_timestamp_${storeUrl}`;
@@ -335,17 +335,18 @@ const actions = {
                 label: 'Shift4Shop Category [Alt + 2]',
                 hotkey: '2',
                 order: 2,
-                action: async () => {
-                  try {
-                    const securityToken = await actions.platforms.shift4shop.securityToken;
-                    GM_openInTab(
-                      `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${actions.platforms.shift4shop.catalogId}`,
-                      { active: true },
-                    );
-                  } catch (error) {
-                    alert('Failed to get security token\nTry to log in to the store manager');
-                    console.error('Failed to get security token:', error);
-                  }
+                action: () => {
+                  actions.platforms.shift4shop.securityToken
+                    .then((securityToken) => {
+                      GM_openInTab(
+                        `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${actions.platforms.shift4shop.catalogId}`,
+                        { active: true },
+                      );
+                    })
+                    .catch((error) => {
+                      alert('Failed to get security token\nTry to log in to the store manager');
+                      console.error('Failed to get security token:', error);
+                    });
                 },
               },
             ];
@@ -608,8 +609,8 @@ function setupPermissionsButton() {
       window.unsafeWindow?.woocommerce_params ||
       window.unsafeWindow?._3d_cart,
     10000,
-  ).then(async function () {
-    await registerPlatformActions();
+  ).then(function () {
+    registerPlatformActions();
   });
 
   ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
