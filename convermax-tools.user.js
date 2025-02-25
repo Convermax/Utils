@@ -594,11 +594,11 @@ function setupPermissionsButton() {
       window.unsafeWindow?.woocommerce_params ||
       window.unsafeWindow?._3d_cart,
     10000,
-  ).then(function () {
+  ).then(() => {
     registerPlatformActions();
   });
 
-  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
+  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(() => {
     registerCommonActions();
   });
 
@@ -610,8 +610,8 @@ function setupPermissionsButton() {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
   }
   if (url.startsWith('https://partners.shopify.com/')) {
-    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(function () {
-      setupPermissionsButton();
-    });
+    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(() =>
+      setupPermissionsButton(),
+    );
   }
 })();
