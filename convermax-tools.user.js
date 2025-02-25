@@ -85,14 +85,11 @@ const actions = {
     },
     bigcommerce: {
       test: () => window.unsafeWindow?.BCData && actions.platforms.bigcommerce.storeHash,
+      // When logged in to the store admin BC renders JS with admin bar init even if it's hidden,
+      // we parse those init params to get channelId and categoryId
       _bcAdminBarParams: (() => {
-        const match = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/);
-        return match
-          ? match[1]
-              .replace(/{.*?}/g, '{}')
-              .split(',')
-              .map((arg) => arg.trim().replace(/^['"]|['"]$/g, ''))
-          : null;
+        const paramsStr = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/);
+        return paramsStr?.[1]?.split(/',\s+'/);
       })(),
       get storeHash() {
         return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1] || null;
@@ -105,10 +102,10 @@ const actions = {
         );
       },
       get channelId() {
-        return this._bcAdminBarParams ? this._bcAdminBarParams[1] : null;
+        return this._bcAdminBarParams?.[1];
       },
       get categoryId() {
-        return this._bcAdminBarParams ? this._bcAdminBarParams[4] : null;
+        return this._bcAdminBarParams?.[4];
       },
       general: [
         {
@@ -151,8 +148,8 @@ const actions = {
         {
           test: () =>
             actions.platforms.bigcommerce.storeHash &&
-            actions.platforms.bigcommerce.categoryId &&
-            actions.platforms.bigcommerce.channelId,
+            actions.platforms.bigcommerce.channelId &&
+            actions.platforms.bigcommerce.categoryId,
           actions: [
             {
               label: 'BigCommerce Category [Alt + 2]',
