@@ -24,3 +24,4 @@ typings/
 !.vscode/*.tpl
 run?.bat
 .env
+.yarn/
