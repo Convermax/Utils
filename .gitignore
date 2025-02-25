@@ -1,0 +1,26 @@
+syntax: glob
+obj/
+bin/
+bin?/
+packages/
+node_modules
+bower_components
+project.lock.json
+
+*.suo
+*.user
+*.rej
+*.DS_Store
+*.log
+
+node_modules/
+flow-typed/npm
+bower_components/
+coverage/
+.tmp/
+typings/
+.vs
+.vscode
+!.vscode/*.tpl
+run?.bat
+.env

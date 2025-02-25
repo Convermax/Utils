@@ -1,0 +1,7 @@
+*.html
+*.yaml
+*.yml
+
+bin/
+obj/
+.vs/

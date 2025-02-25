@@ -1,13 +1,15 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.7.0
+// @version      0.8.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
-// @author       Miha_xXx
+// @author       Miha_xXx & ArtyomPeterson
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
+// @grant        GM_setClipboard
+// @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
 // @grant        GM_getValue
@@ -17,134 +19,444 @@
 // ==/UserScript==
 /* eslint-disable no-console, no-undef, camelcase */
 
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-function registerPlatformAdminMenuCommand() {
-  if (window.unsafeWindow?.Shopify) {
-    GM_registerMenuCommand(`Shopify admin - Themes`, function () {
-      GM_openInTab(`${window.location.origin}/admin/themes`, {
-        active: true,
-      });
-    });
-
-    const page = window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
-
-    if (page?.pageType === 'product' || page?.pageType === 'collection') {
-      GM_registerMenuCommand(`${capitalizeFirstLetter(page?.pageType)} at Shopify admin`, function () {
-        GM_openInTab(`${window.location.origin}/admin/${page.pageType}s/${page.resourceId}`, {
-          active: true,
-        });
-      });
-    }
-  } else if (window.unsafeWindow?.BCData) {
-    const storeId = document
-      .querySelector("head link[rel='dns-prefetch preconnect'][href*='.bigcommerce.com/s-']")
-      ?.href?.split('s-')[1];
-
-    if (storeId) {
-      GM_registerMenuCommand(`BigCommerce admin`, function () {
-        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage`, {
-          active: true,
-        });
-      });
-    }
-
-    const productId = document.querySelector('input[name=product_id]')?.value;
-
-    if (storeId && productId) {
-      GM_registerMenuCommand('Product at BigCommerce admin', function () {
-        GM_openInTab(`https://store-${storeId}.mybigcommerce.com/manage/products/${productId}/edit`, {
-          active: true,
-        });
-      });
-    }
-  } else if (window.unsafeWindow?.woocommerce_params) {
-    GM_registerMenuCommand(`WooCommerce admin`, function () {
-      GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, {
-        active: true,
-      });
-    });
-    const productId =
-      window.unsafeWindow?.cm_product?.[0] ??
-      window.unsafeWindow?.document.querySelector('button[name="add-to-cart"]')?.value;
-    if (productId) {
-      GM_registerMenuCommand('Product at WooCommerce admin', function () {
-        GM_openInTab(`${window.location.origin}/wp-admin/post.php?post=${productId}&action=edit`, {
-          active: true,
-        });
-      });
-    }
-    const categoryHandle = window.location.pathname.includes('/product-category/')
-      ? window.location.pathname.replace('/product-category/', '')
-      : '';
-    if (categoryHandle) {
-      GM_registerMenuCommand('Category products at WooCommerce admin', function () {
-        GM_openInTab(
-          `${window.location.origin}/wp-admin/edit.php?product_cat=${categoryHandle}&post_type=product`,
-          {
-            active: true,
-          },
+const actions = {
+  platforms: {
+    shopify: {
+      test: () => window.unsafeWindow?.Shopify || window.location.origin === 'https://admin.shopify.com',
+      get page() {
+        return window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
+      },
+      general: [
+        {
+          label: 'Shopify Themes',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/themes`, {
+              active: true,
+            }),
+        },
+        {
+          label: 'Shopify All Collections',
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/collections`, {
+              active: true,
+            }),
+        },
+      ],
+      resources: [
+        {
+          test: () =>
+            actions.platforms.shopify.page &&
+            actions.platforms.shopify.page.resourceId &&
+            actions.platforms.shopify.page.pageType === 'product',
+          actions: [
+            {
+              label: 'Shopify Product',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/admin/products/${actions.platforms.shopify.page.resourceId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.shopify.page &&
+            actions.platforms.shopify.page.resourceId &&
+            actions.platforms.shopify.page.pageType === 'collection',
+          actions: [
+            {
+              label: 'Shopify Collection',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/admin/collections/${actions.platforms.shopify.page.resourceId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+      ],
+    },
+    bigcommerce: {
+      test: () => window.unsafeWindow?.BCData && actions.platforms.bigcommerce.storeHash,
+      // When logged in to the store admin BC renders JS with admin bar init even if it's hidden,
+      // we parse those init params to get channelId and categoryId
+      _bcAdminBarParams: (() => {
+        const paramsStr = document.documentElement.innerHTML.match(/window\.bcAdminBar\(([^)]+)\)/)?.[1];
+        return paramsStr?.split(/',\s+'/);
+      })(),
+      get storeHash() {
+        return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
+      },
+      get productId() {
+        return document.querySelector('input[name=product_id]')?.value;
+      },
+      get channelId() {
+        return this._bcAdminBarParams?.[1];
+      },
+      get categoryId() {
+        return this._bcAdminBarParams?.[4];
+      },
+      general: [
+        {
+          label: 'BigCommerce Admin',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(
+              `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage`,
+              {
+                active: true,
+              },
+            ),
+        },
+        {
+          label: 'BigCommerce All Categories',
+          action: () =>
+            GM_openInTab(
+              `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories`,
+              { active: true },
+            ),
+        },
+      ],
+      resources: [
+        {
+          test: () => actions.platforms.bigcommerce.storeHash && actions.platforms.bigcommerce.productId,
+          actions: [
+            {
+              label: 'BigCommerce Product',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/edit/${actions.platforms.bigcommerce.productId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.bigcommerce.storeHash &&
+            actions.platforms.bigcommerce.channelId &&
+            actions.platforms.bigcommerce.categoryId,
+          actions: [
+            {
+              label: 'BigCommerce Category',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories/${actions.platforms.bigcommerce.channelId}/edit/${actions.platforms.bigcommerce.categoryId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+      ],
+    },
+    woocommerce: {
+      test: () => window.unsafeWindow?.woocommerce_params,
+      get productId() {
+        return (
+          window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value
         );
-      });
-    }
-    const categoryName = window.unsafeWindow?.cm_category;
-    if (categoryName) {
-      GM_registerMenuCommand('Category settings at WooCommerce admin (see 1st)', function () {
-        GM_openInTab(
-          `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${categoryName.replace(' ', '+')}`,
+      },
+      get categoryName() {
+        return window.unsafeWindow?.cm_category;
+      },
+      get categoryHandle() {
+        return window.location.pathname.includes('/product-category/')
+          ? window.location.pathname.replace('/product-category/', '')
+          : '';
+      },
+      general: [
+        {
+          label: 'WooCommerce Admin',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(`${window.location.origin}/wp-admin/admin.php?page=wc-admin`, { active: true }),
+        },
+        {
+          label: 'WooCommerce All Categories',
+          action: () =>
+            GM_openInTab(
+              `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product`,
+              { active: true },
+            ),
+        },
+      ],
+      resources: [
+        {
+          test: () => actions.platforms.woocommerce.productId,
+          actions: [
+            {
+              label: 'WooCommerce Product',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/wp-admin/post.php?post=${actions.platforms.woocommerce.productId}&action=edit`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () => actions.platforms.woocommerce.categoryName,
+          actions: [
+            {
+              label: 'WooCommerce Category',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${actions.platforms.woocommerce.categoryName.replace(' ', '+')}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () => actions.platforms.woocommerce.categoryHandle,
+          actions: [
+            {
+              label: 'WooCommerce Category Products',
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/wp-admin/edit.php?product_cat=${actions.platforms.woocommerce.categoryHandle}&post_type=product`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+      ],
+    },
+    shift4shop: {
+      test: () => window.unsafeWindow?._3d_cart,
+      get productId() {
+        return window.unsafeWindow?._3d_item?.catalogid;
+      },
+      get catalogId() {
+        // both products and categories have catalog ID
+        return window.unsafeWindow?.catID;
+      },
+      // Shouldn't be called without explicit user intent
+      get securityToken() {
+        return new Promise((resolve, reject) => {
+          const storeUrl = window.location.origin;
+          const tokenKey = `shift4shop_security_token_${storeUrl}`;
+          const timestampKey = `shift4shop_token_timestamp_${storeUrl}`;
+
+          const cachedToken = GM_getValue(tokenKey);
+          const tokenTimestamp = GM_getValue(timestampKey);
+          const tokenExpiry = 24 * 60 * 60 * 1000;
+          if (cachedToken && tokenTimestamp && Date.now() - tokenTimestamp < tokenExpiry) {
+            return resolve(cachedToken);
+          }
+
+          GM_xmlhttpRequest({
+            method: 'GET',
+            url: `${storeUrl}/admin/category_view.asp`,
+            onload(response) {
+              const tokenMatch = response.responseText.match(/hdnSecurityToken=([^&]+)/);
+              if (tokenMatch && tokenMatch[1]) {
+                GM_setValue(tokenKey, tokenMatch[1]);
+                GM_setValue(timestampKey, Date.now());
+                resolve(tokenMatch[1]);
+              } else {
+                reject(new Error('Security token not found in the response.'));
+              }
+            },
+            onerror(error) {
+              reject(error);
+            },
+          });
+        });
+      },
+      general: [
+        {
+          label: 'Shift4Shop Admin',
+          hotkey: '1',
+          order: 1,
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/admin-home.asp`, {
+              active: true,
+            }),
+        },
+        {
+          label: 'Shift4Shop All Categories',
+          action: () =>
+            GM_openInTab(`${window.location.origin}/admin/category_view.asp`, {
+              active: true,
+            }),
+        },
+      ],
+      resources: [
+        {
+          test: () => actions.platforms.shift4shop.productId,
+          actions: [
+            {
+              label: 'Shift4Shop Product',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `${window.location.origin}/admin/iteminfo.asp?catid=${actions.platforms.shift4shop.productId}&pannel=1`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            !actions.platforms.shift4shop.productId && !isNaN(actions.platforms.shift4shop.catalogId),
+          actions: [
+            {
+              label: 'Shift4Shop Category',
+              hotkey: '2',
+              order: 2,
+              action: () => {
+                actions.platforms.shift4shop.securityToken
+                  .then((securityToken) => {
+                    GM_openInTab(
+                      `${window.location.origin}/admin/category_view.asp?action=options&hdnSecurityToken=${securityToken}&catid=${actions.platforms.shift4shop.catalogId}`,
+                      { active: true },
+                    );
+                  })
+                  .catch((error) => {
+                    alert('Failed to get security token\nTry to log in to the store manager');
+                    console.error('Failed to get security token:', error);
+                  });
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+  common: {
+    test: () => actions.common.storeId,
+    get storeId() {
+      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
+        ?.replace('https://', '')
+        ?.replace('.myconvermax.com', '')
+        ?.replace('client.convermax.com/', '');
+    },
+    get productId() {
+      return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
+    },
+    get isFitmentSearch() {
+      return !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
+    },
+    get vehicle() {
+      return window.unsafeWindow?.Convermax?.getVehicle();
+    },
+    general: [
+      {
+        label: 'Convermax Admin',
+        hotkey: '3',
+        order: 3,
+        action: () =>
+          GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
+      },
+      {
+        hotkey: '`',
+        ctrlKey: true,
+        action: () => GM_setClipboard(actions.common.storeId),
+      },
+    ],
+    resources: [
+      {
+        test: () => actions.common.storeId && actions.common.isFitmentSearch && actions.common.productId,
+        actions: [
           {
-            active: true,
+            label: 'Fitment Chart',
+            hotkey: '4',
+            order: 4,
+            action: () =>
+              GM_openInTab(
+                `https://${actions.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${actions.common.productId}&includeSource=true`,
+                { active: true },
+              ),
           },
-        );
-      });
-    }
-  }
-}
+        ],
+      },
+      {
+        test: () => actions.common.storeId && actions.common.isFitmentSearch,
+        actions: [
+          {
+            label: 'Vehicle Info',
+            hotkey: '5',
+            order: 5,
+            action: () => {
+              if (actions.common.vehicle) {
+                const url = new URL(`https://${actions.common.storeId}.myconvermax.com/ymm/vehicleinfo.html`);
+                for (const [key, value] of Object.entries(actions.common.vehicle)) {
+                  url.searchParams.set(key, value);
+                }
+                GM_openInTab(url.href, { active: true });
+              } else {
+                alert('Convermax Tools: No vehicle selected!');
+              }
+            },
+          },
+        ],
+      },
+    ],
+  },
+};
 
-function registerFitmentsMenuCommand() {
-  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-    ?.replace('https://', '')
-    ?.replace('.myconvermax.com', '')
-    ?.replace('client.convermax.com/', '');
-  const productId = window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
-  const isFitmentSearch =
-    !!window.unsafeWindow?.Convermax?.templates?.config?.fitmentSearchConfig?.fields?.length;
-
-  if (storeId && isFitmentSearch && productId) {
-    GM_registerMenuCommand('Fitment chart', function () {
-      GM_openInTab(
-        `https://${storeId}.myconvermax.com/ymm/fitments.html?productId=${productId}&includeSource=true`,
-        { active: true },
-      );
+function registerActions(commands) {
+  commands
+    .filter(({ label }) => label)
+    .sort((a, b) => (a.order || 9) - (b.order || 9))
+    .forEach(({ hotkey, ctrlKey, label, action }) => {
+      const hotkeyStr = ` [${ctrlKey ? 'Ctrl' : 'Alt'} + ${hotkey}]`;
+      return GM_registerMenuCommand(`${label}${hotkey ? hotkeyStr : ''}`, action);
     });
-  }
-
-  if (storeId && isFitmentSearch) {
-    GM_registerMenuCommand('Vehicle Info', function () {
-      if (window.unsafeWindow?.Convermax?.isVehicleSelected()) {
-        const url = new URL(`https://${storeId}.myconvermax.com/ymm/vehicleinfo.html`);
-        for (const [key, value] of Object.entries(window.unsafeWindow?.Convermax?.getVehicle())) {
-          url.searchParams.set(key, value);
+  commands
+    .filter(({ hotkey }) => hotkey)
+    .forEach(({ hotkey, ctrlKey, action }) => {
+      document.addEventListener('keydown', (e) => {
+        if (
+          !e.shiftKey &&
+          e.key === hotkey &&
+          ((ctrlKey && e.ctrlKey && !e.altKey) || (!ctrlKey && !e.ctrlKey && e.altKey))
+        ) {
+          e.preventDefault();
+          action();
         }
-
-        GM_openInTab(url.href, { active: true });
-      } else {
-        alert('Convermax Tools: No vehicle selected!');
-      }
+      });
     });
+}
+
+async function registerPlatformActions() {
+  const platform = Object.values(actions.platforms).find((p) => p.test());
+
+  if (platform) {
+    const commands = [
+      ...platform.general,
+      ...platform.resources.filter((r) => r.test()).flatMap((r) => r.actions),
+    ];
+    registerActions(commands);
   }
 }
 
-function registerConvermaxAdminMenuCommand() {
-  const storeId = window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-    ?.replace('https://', '')
-    .replace('.myconvermax.com', '');
-  if (storeId) {
-    GM_registerMenuCommand('Store status at Convermax admin', function () {
-      GM_openInTab(`https://myconvermax.com/${storeId}/status`, { active: true });
-    });
+function registerCommonActions() {
+  if (actions.common.test()) {
+    const commands = [
+      ...actions.common.general,
+      ...actions.common.resources.filter((r) => r.test()).flatMap((r) => r.actions),
+    ];
+    registerActions(commands);
   }
 }
 
@@ -228,22 +540,69 @@ function ensureContextIsSet(getContext, timeout) {
   }
 }
 
+function setupPermissionsButton() {
+  const requiredPermissions = [
+    'products',
+    'manage_products',
+    'manage_inventory',
+    'delete_products',
+    'metaobject_definitions_view',
+    'metaobjects_view',
+    'metaobject_definitions_edit',
+    'metaobjects_edit',
+    'metaobject_definitions_delete',
+    'metaobjects_delete',
+    'applications',
+    'themes',
+    'edit_theme_code',
+    'pages',
+    'links',
+  ];
+
+  const targetButton = document.querySelector('#create-new-store-button');
+
+  const button = document.createElement('button');
+  button.textContent = 'Select permissions';
+  button.className = 'Polaris-Button Polaris-Button--primary';
+  button.style.marginLeft = '10px';
+  button.setAttribute('type', 'button');
+
+  button.addEventListener('click', () => {
+    requiredPermissions.forEach((permission) => {
+      const checkbox = document.querySelector(`input#${permission}.Polaris-Checkbox__Input`);
+      if (checkbox && !checkbox.checked) {
+        checkbox.click();
+      }
+    });
+
+    const textArea = document.querySelector('textarea#PolarisTextField2');
+    if (textArea) {
+      textArea.value = 'Convermax Team: Requesting access to help you with our app.';
+      textArea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
+  targetButton.parentNode.insertBefore(button, targetButton.nextSibling);
+}
+
 (function () {
   'use strict';
 
   bypassShopifyPassword();
 
-  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(function () {
-    registerConvermaxAdminMenuCommand();
-    registerFitmentsMenuCommand();
-  });
-
   ensureContextIsSet(
     () =>
-      window.unsafeWindow?.Shopify || window.unsafeWindow?.BCData || window.unsafeWindow?.woocommerce_params,
+      window.unsafeWindow?.Shopify ||
+      window.unsafeWindow?.BCData ||
+      window.unsafeWindow?.woocommerce_params ||
+      window.unsafeWindow?._3d_cart,
     10000,
-  ).then(function () {
-    registerPlatformAdminMenuCommand();
+  ).then(() => {
+    registerPlatformActions();
+  });
+
+  ensureContextIsSet(() => window.unsafeWindow?.Convermax?.initialized, 10000).then(() => {
+    registerCommonActions();
   });
 
   const url = window.location.href;
@@ -252,5 +611,10 @@ function ensureContextIsSet(getContext, timeout) {
   }
   if (url.startsWith('https://partners.shopify.com/201897/stores?search_value=')) {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
+  }
+  if (url.startsWith('https://partners.shopify.com/')) {
+    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(() =>
+      setupPermissionsButton(),
+    );
   }
 })();
