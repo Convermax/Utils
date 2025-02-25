@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.8.0
+// @version      0.8.1
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -16,6 +16,7 @@
 // @grant        GM_setValue
 // @grant        unsafeWindow
 // @sandbox      JavaScript
+// @noframes
 // ==/UserScript==
 /* eslint-disable no-console, no-undef, camelcase */
 
@@ -218,7 +219,12 @@ const actions = {
               order: 2,
               action: () =>
                 GM_openInTab(
-                  `${window.location.origin}/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${actions.platforms.woocommerce.categoryName.replace(' ', '+')}`,
+                  `${
+                    window.location.origin
+                  }/wp-admin/edit-tags.php?taxonomy=product_cat&post_type=product&s=${actions.platforms.woocommerce.categoryName.replace(
+                    ' ',
+                    '+',
+                  )}`,
                   { active: true },
                 ),
             },
