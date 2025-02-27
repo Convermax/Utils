@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.8.1
+// @version      0.8.2
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -246,7 +246,8 @@ const actions = {
       ],
     },
     shift4shop: {
-      test: () => window.unsafeWindow?._3d_cart,
+      test: () =>
+        window.unsafeWindow?._3d_cart || window.unsafeWindow?._3dThemeType || window.unsafeWindow?._3d_item,
       get productId() {
         return window.unsafeWindow?._3d_item?.catalogid;
       },
@@ -596,14 +597,7 @@ function setupPermissionsButton() {
 
   bypassShopifyPassword();
 
-  ensureContextIsSet(
-    () =>
-      window.unsafeWindow?.Shopify ||
-      window.unsafeWindow?.BCData ||
-      window.unsafeWindow?.woocommerce_params ||
-      window.unsafeWindow?._3d_cart,
-    10000,
-  ).then(() => {
+  ensureContextIsSet(() => actions.platforms.some((p) => p.test()), 10000).then(() => {
     registerPlatformActions();
   });
 
