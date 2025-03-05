@@ -136,7 +136,7 @@ const actions = {
               order: 2,
               action: () =>
                 GM_openInTab(
-                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/edit/${actions.platforms.bigcommerce.productId}`,
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/${actions.platforms.bigcommerce.productId}/edit`,
                   { active: true },
                 ),
             },
