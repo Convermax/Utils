@@ -375,7 +375,7 @@ const actions = {
           GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
       },
       {
-        hotkey: '`',
+        hotkey: 'Backquote',
         ctrlKey: true,
         action: () => GM_setClipboard(actions.common.storeId),
       },
@@ -435,7 +435,7 @@ function registerActions(commands) {
       document.addEventListener('keydown', (e) => {
         if (
           !e.shiftKey &&
-          e.key === hotkey &&
+          (e.key === hotkey || e.code === hotkey) &&
           ((ctrlKey && e.ctrlKey && !e.altKey) || (!ctrlKey && !e.ctrlKey && e.altKey))
         ) {
           e.preventDefault();
