@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.8.4
+// @version      0.8.5
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -93,7 +93,10 @@ const actions = {
         return paramsStr?.split(/',\s+'/);
       })(),
       get storeHash() {
-        return document.querySelector("head link[href*='.bigcommerce.com/s-']")?.href?.split('s-')[1];
+        return document
+          .querySelector("head link[href*='.bigcommerce.com/s-']")
+          ?.href?.split('s-')[1]
+          .split('/')[0];
       },
       get productId() {
         return document.querySelector('input[name=product_id]')?.value;
