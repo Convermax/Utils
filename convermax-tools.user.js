@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.8.5
+// @version      0.8.6
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -166,7 +166,7 @@ const actions = {
       ],
     },
     woocommerce: {
-      test: () => window.unsafeWindow?.woocommerce_params,
+      test: () => window.unsafeWindow?.woocommerce_params || window.unsafeWindow?.wc_order_attribution,
       get productId() {
         return (
           window.unsafeWindow?.cm_product?.[0] || document.querySelector('button[name="add-to-cart"]')?.value
