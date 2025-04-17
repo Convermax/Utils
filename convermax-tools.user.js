@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.8.6
+// @version      0.8.7
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -529,7 +529,7 @@ function fixNoStoreAtShopifyPartners() {
 }
 
 function bypassShopifyPassword() {
-  if (window.location.href.includes('.myshopify.com/password')) {
+  if (window.location.href.match(/\.myshopify.com(\/\w{2})?\/password/)) {
     window.location.replace(`${window.location.origin}/admin/themes`);
   }
 }
