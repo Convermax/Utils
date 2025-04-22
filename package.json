@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^8.57.1",
+    "@types/tampermonkey": "^5.0.4",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",
