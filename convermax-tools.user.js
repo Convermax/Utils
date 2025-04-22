@@ -470,8 +470,8 @@ function registerCommonActions() {
   }
 }
 
-function isShopifyAdminFixTimeoutExpired() {
-  return Date.now() - GM_getValue('fixShopifyAdminStartedAt', 0) > 30 * 1000;
+function isActionExpired(action,secondsTTL = 30) {
+  return Date.now() - GM_getValue(`${action}StartedAt`, 0) > secondsTTL * 1000;
 }
 
 function fixNoAccessToShopifyAdmin() {
@@ -491,7 +491,7 @@ function fixNoAccessToShopifyAdmin() {
     GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
     window.location.replace(`https://partners.shopify.com/201897/stores?search_value=${storeId}`);
     return true;
-  } else if (isAdminLogin && !isShopifyAdminFixTimeoutExpired() && redirectPath) {
+  } else if (isAdminLogin && !isActionExpired('fixShopifyAdmin') && redirectPath) {
     GM_setValue('fixShopifyAdminLocation', '');
     window.location.replace(`https://admin.shopify.com/store/${storeId}${redirectPath}`);
     return true;
@@ -500,7 +500,7 @@ function fixNoAccessToShopifyAdmin() {
 }
 
 function fixNoStoreAtShopifyPartners() {
-  if (isShopifyAdminFixTimeoutExpired()) {
+  if (isActionExpired('fixShopifyAdmin')) {
     return false;
   }
 
@@ -528,10 +528,24 @@ function fixNoStoreAtShopifyPartners() {
   return false;
 }
 
-function bypassShopifyPassword() {
+function bypassShopifyStub() {
   if (window.location.href.match(/\.myshopify.com(\/\w{2})?\/password/)) {
     window.location.replace(`${window.location.origin}/admin/themes`);
   }
+}
+
+function bypassBigCommerceStub() {
+  const isPreLaunch =
+    !!document.querySelector("head link[href*='bigcommerce.com/'][href*='prelaunch']") &&
+    !!document.querySelector('input#guestTkn');
+  const isMaintenance = !!document.querySelector("head link[data-stencil-stylesheet][href*='maintenance']");
+
+  if (isPreLaunch || isMaintenance) {
+    GM_setValue('bypassBigCommerceStubStartedAt', Date.now());
+    GM_setValue('bypassBigCommerceStubLocation', window.location.href);
+    window.location.replace(`${window.location.origin}/admin`);
+  }
+  else if(window.location.href === 'https://login.bigcommerce.com/login')
 }
 
 function ensureContextIsSet(getContext, timeout) {
@@ -598,7 +612,7 @@ function setupPermissionsButton() {
 (function () {
   'use strict';
 
-  bypassShopifyPassword();
+  bypassShopifyStub();
 
   ensureContextIsSet(() => actions.platforms.some((p) => p.test()), 10000).then(() => {
     registerPlatformActions();
