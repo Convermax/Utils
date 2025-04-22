@@ -470,7 +470,7 @@ function registerCommonActions() {
   }
 }
 
-function isActionExpired(action,secondsTTL = 30) {
+function isActionExpired(action, secondsTTL = 30) {
   return Date.now() - GM_getValue(`${action}StartedAt`, 0) > secondsTTL * 1000;
 }
 
@@ -544,8 +544,9 @@ function bypassBigCommerceStub() {
     GM_setValue('bypassBigCommerceStubStartedAt', Date.now());
     GM_setValue('bypassBigCommerceStubLocation', window.location.href);
     window.location.replace(`${window.location.origin}/admin`);
+  } else if (window.location.href === 'https://login.bigcommerce.com/login') {
+    /* empty */
   }
-  else if(window.location.href === 'https://login.bigcommerce.com/login')
 }
 
 function ensureContextIsSet(getContext, timeout) {
