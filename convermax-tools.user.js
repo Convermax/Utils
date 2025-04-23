@@ -534,21 +534,6 @@ function bypassShopifyStub() {
   }
 }
 
-function bypassBigCommerceStub() {
-  const isPreLaunch =
-    !!document.querySelector("head link[href*='bigcommerce.com/'][href*='prelaunch']") &&
-    !!document.querySelector('input#guestTkn');
-  const isMaintenance = !!document.querySelector("head link[data-stencil-stylesheet][href*='maintenance']");
-
-  if (isPreLaunch || isMaintenance) {
-    GM_setValue('bypassBigCommerceStubStartedAt', Date.now());
-    GM_setValue('bypassBigCommerceStubLocation', window.location.href);
-    window.location.replace(`${window.location.origin}/admin`);
-  } else if (window.location.href === 'https://login.bigcommerce.com/login') {
-    /* empty */
-  }
-}
-
 function ensureContextIsSet(getContext, timeout) {
   const start = Date.now();
   return new Promise(waitForContext).catch(() => {});
@@ -563,6 +548,58 @@ function ensureContextIsSet(getContext, timeout) {
       setTimeout(waitForContext.bind(this, resolve, reject), 30);
     }
   }
+}
+
+function bypassBigCommerceStubInit() {
+  const isPreLaunch =
+    !!document.querySelector("head link[href*='bigcommerce.com/'][href*='prelaunch']") &&
+    !!document.querySelector('input#guestTkn');
+  const isMaintenance = !!document.querySelector("head link[data-stencil-stylesheet][href*='maintenance']");
+
+  if (isPreLaunch || isMaintenance) {
+    GM_setValue('bypassBigCommerceStubStartedAt', Date.now());
+    GM_setValue('bypassBigCommerceStubLocation', window.location.href);
+    window.location.replace(`${window.location.origin}/admin`);
+  }
+}
+
+function bypassBigCommerceStub() {
+  if (isActionExpired('bypassBigCommerceStub')) {
+    return true;
+  }
+
+  const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
+  const redirectURL = redirectPath ? new URL(redirectPath) : null;
+  const viewStorefrontsButton = window.document.querySelector('nav button[aria-label="View storefronts"]');
+
+  if (
+    window.location.href === 'https://login.bigcommerce.com/login' &&
+    window.document.querySelector('input#user_email')?.value &&
+    window.document.querySelector('input#user_password')?.value
+  ) {
+    window.document.querySelector('input#login_submit_button')?.click();
+    return true;
+  } else if (
+    window.location.href.endsWith('mybigcommerce.com/manage/dashboard') &&
+    viewStorefrontsButton &&
+    redirectURL
+  ) {
+    viewStorefrontsButton.click();
+    const host = redirectURL.hostname.replace('www.', '');
+    const getRedirectButton = () =>
+      window.document.querySelector(`form[action*="${host}"] button[type="submit"]:not(:disabled)`);
+    ensureContextIsSet(getRedirectButton, 10000).then(() => {
+      const button = getRedirectButton();
+      button?.closest('form')?.removeAttribute('target');
+      button?.click();
+    });
+    return true;
+  } else if (window.location.origin === redirectURL?.origin && window.location.href.includes('?ctk=')) {
+    GM_setValue('bypassBigCommerceStubLocation', '');
+    window.location.replace(redirectURL.href);
+    return true;
+  }
+  return false;
 }
 
 function setupPermissionsButton() {
@@ -614,6 +651,7 @@ function setupPermissionsButton() {
   'use strict';
 
   bypassShopifyStub();
+  bypassBigCommerceStubInit();
 
   ensureContextIsSet(() => actions.platforms.some((p) => p.test()), 10000).then(() => {
     registerPlatformActions();
@@ -634,5 +672,16 @@ function setupPermissionsButton() {
     ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(() =>
       setupPermissionsButton(),
     );
+  }
+
+  const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
+  const redirectURL = redirectPath ? new URL(redirectPath) : null;
+  if (
+    !isActionExpired('bypassBigCommerceStub') &&
+    (url === 'https://login.bigcommerce.com/login' ||
+      url.includes('mybigcommerce.com/manage') ||
+      (window.location.origin === redirectURL?.origin && window.location.href.includes('?ctk=')))
+  ) {
+    ensureContextIsSet(() => bypassBigCommerceStub(), 10000);
   }
 })();
