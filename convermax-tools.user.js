@@ -501,7 +501,7 @@ function fixNoAccessToShopifyAdmin() {
 
 function fixNoStoreAtShopifyPartners() {
   if (isActionExpired('fixShopifyAdmin')) {
-    return false;
+    return true;
   }
 
   const url = window.location.href;
@@ -519,7 +519,7 @@ function fixNoStoreAtShopifyPartners() {
   if (isPartnersSearch && isNoResults && !isTabSelected) {
     window.location.replace(`${url}&tab=inactive`);
     return true;
-  } else if (isPartnersSearch && !isTabSelected && [...Results].length === 1) {
+  } else if (isPartnersSearch && !isTabSelected && [...Results].length) {
     const form = Results[0].querySelector('form[action^="/201897/stores/"][action$="/login_managed"]');
     form.removeAttribute('target');
     form.querySelector('button[type="submit"]').click();
