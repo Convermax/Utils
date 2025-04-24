@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.8.7
+// @version      0.9.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -570,7 +570,12 @@ function bypassBigCommerceStub() {
 
   const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
   const redirectURL = redirectPath ? new URL(redirectPath) : null;
-  const viewStorefrontsButton = window.document.querySelector('nav button[aria-label="View storefronts"]');
+  const multiStorefrontButton = window.document.querySelector(
+    'nav button:has(span[title="View storefronts"]):not(:disabled)',
+  );
+  const singleStorefrontButton = window.document.querySelector(
+    'nav button:has(span[title="View storefront"]):not(:disabled)',
+  );
 
   if (
     window.location.href === 'https://login.bigcommerce.com/login' &&
@@ -581,18 +586,23 @@ function bypassBigCommerceStub() {
     return true;
   } else if (
     window.location.href.endsWith('mybigcommerce.com/manage/dashboard') &&
-    viewStorefrontsButton &&
+    (multiStorefrontButton || singleStorefrontButton) &&
     redirectURL
   ) {
-    viewStorefrontsButton.click();
-    const host = redirectURL.hostname.replace('www.', '');
-    const getRedirectButton = () =>
-      window.document.querySelector(`form[action*="${host}"] button[type="submit"]:not(:disabled)`);
-    ensureContextIsSet(getRedirectButton, 10000).then(() => {
-      const button = getRedirectButton();
-      button?.closest('form')?.removeAttribute('target');
-      button?.click();
-    });
+    if (multiStorefrontButton) {
+      multiStorefrontButton.click();
+      const host = redirectURL.hostname.replace('www.', '');
+      const getRedirectButton = () =>
+        window.document.querySelector(`form[action*="${host}"] button[type="submit"]:not(:disabled)`);
+      ensureContextIsSet(getRedirectButton, 10000).then(() => {
+        const button = getRedirectButton();
+        button?.closest('form')?.removeAttribute('target');
+        button?.click();
+      });
+    } else if (singleStorefrontButton) {
+      singleStorefrontButton.closest('form')?.removeAttribute('target');
+      singleStorefrontButton.click();
+    }
     return true;
   } else if (window.location.origin === redirectURL?.origin && window.location.href.includes('?ctk=')) {
     GM_setValue('bypassBigCommerceStubLocation', '');
