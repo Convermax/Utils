@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.4
+// @version      0.9.5
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -107,6 +107,11 @@ const actions = {
       get categoryId() {
         return this._bcAdminBarParams?.[4];
       },
+      get isBrandPage() {
+        return !!window.document.querySelector(
+          'body.page-type-brand, body.page-type_brand, body.type-brand, body.brand, .main.brand, main.pages-css-brand, body.page--brand, .page.brand, [data-content-region="brand_below_header"]',
+        );
+      },
       general: [
         {
           label: 'BigCommerce Admin',
@@ -149,6 +154,7 @@ const actions = {
           test: () =>
             actions.platforms.bigcommerce.storeHash &&
             actions.platforms.bigcommerce.channelId &&
+            !actions.platforms.bigcommerce.isBrandPage &&
             actions.platforms.bigcommerce.categoryId,
           actions: [
             {
@@ -158,6 +164,24 @@ const actions = {
               action: () =>
                 GM_openInTab(
                   `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/categories/${actions.platforms.bigcommerce.channelId}/edit/${actions.platforms.bigcommerce.categoryId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.bigcommerce.storeHash &&
+            actions.platforms.bigcommerce.categoryId &&
+            actions.platforms.bigcommerce.isBrandPage,
+          actions: [
+            {
+              label: 'BigCommerce Brand',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/brands/${actions.platforms.bigcommerce.categoryId}/edit`,
                   { active: true },
                 ),
             },
