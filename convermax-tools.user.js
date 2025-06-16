@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.6
+// @version      0.9.7
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -114,7 +114,7 @@ const actions = {
       },
       get isWebPage() {
         return !!window.document.querySelector(
-          'body.page-type-page, body.page-type_page, body.type-page, body.page, .main.page, main.pages-css-page, body.page--page, .page.page, body.page_type__page, [data-content-region="page_below_header"]',
+          'body.page-type-page, body.page-type_page, body.type-page, body.page_type__page',
         );
       },
       general: [
