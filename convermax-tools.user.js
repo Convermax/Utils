@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.5
+// @version      0.9.6
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -109,7 +109,12 @@ const actions = {
       },
       get isBrandPage() {
         return !!window.document.querySelector(
-          'body.page-type-brand, body.page-type_brand, body.type-brand, body.brand, .main.brand, main.pages-css-brand, body.page--brand, .page.brand, [data-content-region="brand_below_header"]',
+          'body.page-type-brand, body.page-type_brand, body.type-brand, body.brand, .main.brand, main.pages-css-brand, body.page--brand, .page.brand, body.page_type__brand, [data-content-region="brand_below_header"]',
+        );
+      },
+      get isWebPage() {
+        return !!window.document.querySelector(
+          'body.page-type-page, body.page-type_page, body.type-page, body.page, .main.page, main.pages-css-page, body.page--page, .page.page, body.page_type__page, [data-content-region="page_below_header"]',
         );
       },
       general: [
@@ -155,6 +160,7 @@ const actions = {
             actions.platforms.bigcommerce.storeHash &&
             actions.platforms.bigcommerce.channelId &&
             !actions.platforms.bigcommerce.isBrandPage &&
+            !actions.platforms.bigcommerce.isWebPage &&
             actions.platforms.bigcommerce.categoryId,
           actions: [
             {
@@ -182,6 +188,25 @@ const actions = {
               action: () =>
                 GM_openInTab(
                   `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/products/brands/${actions.platforms.bigcommerce.categoryId}/edit`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.bigcommerce.storeHash &&
+            actions.platforms.bigcommerce.channelId &&
+            actions.platforms.bigcommerce.categoryId &&
+            actions.platforms.bigcommerce.isWebPage,
+          actions: [
+            {
+              label: 'BigCommerce Page',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://store-${actions.platforms.bigcommerce.storeHash}.mybigcommerce.com/manage/channel/${actions.platforms.bigcommerce.channelId}/pages/${actions.platforms.bigcommerce.categoryId}/edit`,
                   { active: true },
                 ),
             },
