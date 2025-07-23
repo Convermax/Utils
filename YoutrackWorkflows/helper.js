@@ -1,31 +1,24 @@
 const workflow = require('@jetbrains/youtrack-scripting-api/workflow');
-const http = require("@jetbrains/youtrack-scripting-api/http");
-const CONFIG = require("./config");
+const http = require('@jetbrains/youtrack-scripting-api/http');
+const CONFIG = require('./config');
 
-
-
-class Helper{
-
-  getIssueLink(issue){
-    //example of the issue link to MyConvermax admnin panel
-    //https://myconvermax.com/sdtw-direct-wholesale/support/SS-6181
-    const storeId = issue.fields["Store Id"]?.name.split(" (")[0];
+class Helper {
+  getIssueLink(issue) {
+    // example of the issue link to MyConvermax admnin panel
+    // https://myconvermax.com/sdtw-direct-wholesale/support/SS-6181
+    const storeId = issue.fields['Store Id']?.name.split(' (')[0];
     const ticketId = issue.id;
-    const issueLink = (storeId && ticketId) ? `https://myconvermax.com/${storeId}/support/${ticketId}` : "";
-
-    return issueLink;
+    return storeId && ticketId ? `https://myconvermax.com/${storeId}/support/${ticketId}` : '';
   }
 
-  GetConversationIdFromFrontlink(frontLink){
-
+  getConversationIdFromFrontlink(frontLink) {
     const parts = frontLink.split('/');
     const messageConversationId = parts[parts.length - 1].split('?')[0];
 
     return messageConversationId || null;
   }
 
-  Message(taskName, tasklink, taskStatus){
-
+  message(taskName, tasklink, taskStatus) {
     return `
       <p>Hello,</p><br>
       <p>We just wanted to let you know that the status of your task: <strong>${taskName}</strong></p>
@@ -37,8 +30,7 @@ class Helper{
     `;
   }
 
-  MessageTaskCreate(taskName, taskLink){
-
+  messageTaskCreate(taskName, taskLink) {
     return `
       <p>Hello,</p><br>
       <p>We just wanted to let you know that we put your task, <strong>${taskName}</strong>, in our list.</p>
@@ -51,8 +43,7 @@ class Helper{
     `;
   }
 
-
-  Notification(commentText, issueDescription, issueLink, issueSummary, commentAuthor){
+  notification(commentText, issueDescription, issueLink, issueSummary, commentAuthor) {
     return `
     <p><a href="${issueLink}"><strong>${issueSummary}</strong></a> ticket was updated:</p>
 
@@ -64,102 +55,85 @@ class Helper{
     `;
   }
 
-  EmailReply(commentText, issueLink, commentAuthor){
-    return `
-        ${commentText}
-
-    <p>Ticket Link:</p>
-    <a href="${issueLink}">${issueLink}</a>
-    <p>—<br>Regards,</p>
-      <p>${commentAuthor}</p>
-    `;
-  }
-
-
-
   getRecipientsFromCC(emailString) {
     return emailString.includes(', ') ? emailString.split(', ') : [emailString];
   }
 
   convertFrontAppUrl(apiUrl) {
-    const parts = apiUrl.split("/"); // Split by "/"
+    const parts = apiUrl.split('/'); // Split by "/"
     const conversationId = parts.pop(); // Get the last part of the URL
     return `https://app.frontapp.com/open/${conversationId}`;
   }
 
-  putEmailSubject(state){
-    switch (state){
-      case("Done"):{
-        return "Convermax - Task Completed";
+  putEmailSubject(state) {
+    switch (state) {
+      case 'Done': {
+        return 'Convermax - Task Completed';
       }
-      case("In progress"):{
-        return "Convermax - Task In progress";
+      case 'In progress': {
+        return 'Convermax - Task In progress';
       }
-      case("New"):{
-        return "Convermax - Task created";
+      case 'New': {
+        return 'Convermax - Task created';
       }
-      default:{
-        return "Convermax - Task status updated";
+      default: {
+        return 'Convermax - Task status updated';
       }
     }
-
   }
 
-  SendEmailToConversation(message, frontConversationId) {
+  sendEmailToConversation(message, frontConversationId) {
     const connection = new http.Connection(CONFIG.URL(frontConversationId), null);
     connection.addHeader('Content-Type', 'application/json');
-    connection.addHeader("authorization",`Bearer ${CONFIG.API_TOKEN}`);
+    connection.addHeader('authorization', `Bearer ${CONFIG.API_TOKEN}`);
 
     const body = {
       body: message,
-      //options: {archive: true},
-      channel_id: "alt:address:team@convermax.com",
+      channel_id: 'alt:address:team@convermax.com',
     };
 
     try {
-      let response = connection.postSync("", null, JSON.stringify(body));
+      const response = connection.postSync('', null, JSON.stringify(body));
 
-      if (!response.isSuccess) workflow.message("Front Message sender failed to send.\n" + response.toString());
-      else  workflow.message("Email was successfully sent");
-    }
-    catch(exception) {
-      workflow.message("exception: " + exception);
+      if (!response.isSuccess) {
+        workflow.message(`Front Message sender failed to send.\n${response.toString()}`);
+      } else {
+        workflow.message('Email was successfully sent');
+      }
+    } catch (exception) {
+      workflow.message(`exception: ${exception}`);
     }
   }
 
-  SendNewEmail(message, recipients, issue, subject = null){
+  sendNewEmail(message, recipients, issue, subject = null) {
     const connection = new http.Connection(CONFIG.SEND_NEW_MESSAGE_LINK, null);
     connection.addHeader('Content-Type', 'application/json');
-    connection.addHeader("authorization",`Bearer ${CONFIG.API_TOKEN}`);
+    connection.addHeader('authorization', `Bearer ${CONFIG.API_TOKEN}`);
 
     const body = {
       body: message,
-      //options: {archive: true},
-      //cc: ['1@1.com', '2@2.com'],
       to: recipients,
       subject: subject ? subject : this.putEmailSubject(issue.State.name),
     };
 
     try {
-      let response = connection.postSync("", null, JSON.stringify(body));
+      const response = connection.postSync('', null, JSON.stringify(body));
 
-      if (!response.isSuccess) workflow.message("Front Message sender failed to send.\n" + response.toString());
-      else  {
-        workflow.message("Email was successfully sent");
+      if (!response.isSuccess) {
+        workflow.message(`Front Message sender failed to send.\n${response.toString()}`);
+      } else {
+        workflow.message('Email was successfully sent');
         const rawFrontLink = JSON.parse(response.body)?._links?.related?.conversation || null;
-        if(rawFrontLink){
-          issue.fields["Front Link"] = this.convertFrontAppUrl(rawFrontLink);
+        if (rawFrontLink) {
+          issue.fields['Front Link'] = this.convertFrontAppUrl(rawFrontLink);
         }
-
       }
-    }
-    catch(exception) {
-      workflow.message("exception: " + exception);
+    } catch (exception) {
+      workflow.message(`exception: ${exception}`);
     }
   }
 
-  ConvertYoutrackToHtml(text) {
-
+  convertYoutrackToHtml(text) {
     // Convert angle bracket links to HTML
     text = text.replace(/<(https?:\/\/[^>]+)>/g, '<a href="$1">$1</a>');
 
@@ -170,7 +144,5 @@ class Helper{
 
     return text;
   }
-
-
 }
-module.exports = {Helper};
+module.exports = { Helper };
