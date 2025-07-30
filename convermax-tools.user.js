@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.8
+// @version      0.9.9
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -30,20 +30,23 @@ const actions = {
       get page() {
         return window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
       },
+      get storeId() {
+        return window.unsafeWindow?.Shopify.shop.replace('.myshopify.com', '');
+      },
       general: [
         {
           label: 'Shopify Themes',
           hotkey: '1',
           order: 1,
           action: () =>
-            GM_openInTab(`${window.location.origin}/admin/themes`, {
+            GM_openInTab(`https://admin.shopify.com/store/${actions.platforms.shopify.storeId}/themes`, {
               active: true,
             }),
         },
         {
           label: 'Shopify All Collections',
           action: () =>
-            GM_openInTab(`${window.location.origin}/admin/collections`, {
+            GM_openInTab(`https://admin.shopify.com/store/${actions.platforms.shopify.storeId}/collections`, {
               active: true,
             }),
         },
@@ -61,7 +64,7 @@ const actions = {
               order: 2,
               action: () =>
                 GM_openInTab(
-                  `${window.location.origin}/admin/products/${actions.platforms.shopify.page.resourceId}`,
+                  `https://admin.shopify.com/store/${actions.platforms.shopify.storeId}/products/${actions.platforms.shopify.page.resourceId}`,
                   { active: true },
                 ),
             },
@@ -79,7 +82,7 @@ const actions = {
               order: 2,
               action: () =>
                 GM_openInTab(
-                  `${window.location.origin}/admin/collections/${actions.platforms.shopify.page.resourceId}`,
+                  `https://admin.shopify.com/store/${actions.platforms.shopify.storeId}/collections/${actions.platforms.shopify.page.resourceId}`,
                   { active: true },
                 ),
             },
