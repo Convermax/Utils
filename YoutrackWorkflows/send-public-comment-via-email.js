@@ -7,25 +7,20 @@ exports.rule = entities.Issue.onChange({
   // TODO: give the rule a human-readable title
   title: 'Send public comment via email',
   guard: (ctx) => {
-    const { issue } = ctx;
-    if (issue.comments.isChanged) {
-      const newComment = issue.comments.added.get(0) ?? null;
-      if (!newComment) {
-        return false;
-      }
+    const { issue } = ctx.issue;
+    const newComment = issue.comments.added.get(0) ?? null;
+
+    if (issue.comments.isChanged && newComment) {
       const isValidAutor =
         newComment.author.isInGroup('Convermax Team') &&
         newComment.author.fullName !== 'Reporter' &&
         newComment.author.fullName !== 'Convermax Team';
-
-      return (
-        newComment && newComment.permittedGroup && newComment.permittedGroup.name === 'Public' && isValidAutor
-      );
+      return newComment.permittedGroup && newComment.permittedGroup.name === 'Public' && isValidAutor;
     }
     return false;
   },
   action: (ctx) => {
-    const { issue } = ctx;
+    const { issue } = ctx.issue;
     const frontLink = issue.fields['Front Link'] ?? null;
 
     const issueLink = Helper.getIssueLink(issue);
