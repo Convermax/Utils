@@ -19,7 +19,7 @@ exports.rule = entities.Issue.onChange({
 
     const issueLink = helper.getIssueLink(issue);
 
-    const message = helper.messageTaskCreate(issue.summary, issueLink);
+    const message = helper.messageTaskCreated(issue.summary, issueLink);
 
     if (frontLink) {
       const frontConversationId = helper.getConversationIdFromFrontlink(frontLink);

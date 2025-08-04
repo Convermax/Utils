@@ -22,7 +22,7 @@ exports.rule = entities.Issue.onChange({
 
     // issue.fields.Notify = issue.fields.Notify.bundle.values.find(value => value.name === "Done");
 
-    const message = helper.message(issue.summary, issueLink, issue.State.name);
+    const message = helper.messageStateChanged(issue.summary, issueLink, issue.State.name);
 
     if (frontLink) {
       const frontConversationId = helper.getConversationIdFromFrontlink(frontLink);

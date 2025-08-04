@@ -12,13 +12,13 @@ class Helper {
   }
 
   getConversationIdFromFrontlink(frontLink) {
-    const parts = frontLink.split('/');
-    const messageConversationId = parts[parts.length - 1].split('?')[0];
+    const pathname = URL.canParse(frontLink) ? new URL(frontLink).pathname : null;
+    const conversationId = pathname?.split('/').at(-1);
 
-    return messageConversationId || null;
+    return !isNaN(Number(conversationId)) ? conversationId : null;
   }
 
-  message(taskName, tasklink, taskStatus) {
+  messageStateChanged(taskName, tasklink, taskStatus) {
     return `
       <p>Hello,</p><br>
       <p>We just wanted to let you know that the status of your task: <strong>${taskName}</strong></p>
@@ -30,7 +30,7 @@ class Helper {
     `;
   }
 
-  messageTaskCreate(taskName, taskLink) {
+  messageTaskCreated(taskName, taskLink) {
     return `
       <p>Hello,</p><br>
       <p>We just wanted to let you know that we put your task, <strong>${taskName}</strong>, in our list.</p>
@@ -56,7 +56,7 @@ class Helper {
   }
 
   getRecipientsFromCC(emailString) {
-    return emailString.includes(', ') ? emailString.split(', ') : [emailString];
+    return emailString.split(', ');
   }
 
   convertFrontAppUrl(apiUrl) {
@@ -113,7 +113,7 @@ class Helper {
     const body = {
       body: message,
       to: recipients,
-      subject: subject ? subject : this.putEmailSubject(issue.State.name),
+      subject: subject ?? this.putEmailSubject(issue.State.name),
     };
 
     try {
