@@ -23,18 +23,18 @@ exports.rule = entities.Issue.onChange({
 
     const message = Helper.messageStateChanged(issue.summary, issueLink, issue.State.name);
 
-    if (frontLink) {
-      const frontConversationId = Helper.getConversationIdFromFrontlink(frontLink);
-      if (frontConversationId) {
-        Helper.sendEmailToConversation(message, frontConversationId);
-      }
-    } else if (issue.project.name === 'Support') {
+    if (issue.project.name === 'Support') {
       // нужно добавить специального пользователя в агенты и писать от него
       const teamUser = entities.User.findByLogin('vasilii');
 
       const comment = issue.addComment(message, teamUser);
       comment.permittedUsers.clear();
       comment.permittedGroups.clear();
+    } else if (frontLink) {
+      const frontConversationId = Helper.getConversationIdFromFrontlink(frontLink);
+      if (frontConversationId) {
+        Helper.sendEmailToConversation(message, frontConversationId);
+      }
     } else {
       const recipients = Helper.getRecipientsFromCC(issue.fields.CC);
       if (recipients) {
