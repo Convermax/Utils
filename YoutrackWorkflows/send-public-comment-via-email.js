@@ -26,19 +26,18 @@ exports.rule = entities.Issue.onChange({
   },
   action: (ctx) => {
     const { issue } = ctx;
-    const helper = new Helper();
     const frontLink = issue.fields['Front Link'] ?? null;
 
-    const issueLink = helper.getIssueLink(issue);
+    const issueLink = Helper.getIssueLink(issue);
 
     const newComment = issue.comments.added.get(0);
 
     const taskDescription = issue.description;
     const issueSummary = issue.summary;
 
-    const cleanText = helper.convertYoutrackToHtml(newComment.text);
+    const cleanText = Helper.convertYoutrackToHtml(newComment.text);
 
-    const emailPrepared = helper.notification(
+    const emailPrepared = Helper.notification(
       cleanText,
       taskDescription,
       issueLink,
@@ -47,14 +46,14 @@ exports.rule = entities.Issue.onChange({
     );
 
     if (frontLink) {
-      const frontConversationId = helper.getConversationIdFromFrontlink(frontLink);
+      const frontConversationId = Helper.getConversationIdFromFrontlink(frontLink);
       if (frontConversationId) {
-        helper.sendEmailToConversation(emailPrepared, frontConversationId);
+        Helper.sendEmailToConversation(emailPrepared, frontConversationId);
       }
     } else {
-      const recipients = helper.getRecipientsFromCC(issue.fields.CC);
+      const recipients = Helper.getRecipientsFromCC(issue.fields.CC);
       if (recipients) {
-        helper.sendNewEmail(emailPrepared, recipients, issue, 'New comment added');
+        Helper.sendNewEmail(emailPrepared, recipients, issue, 'New comment added');
       } else {
         workflow.message('CC is empty');
       }

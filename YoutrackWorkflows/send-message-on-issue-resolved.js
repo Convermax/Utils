@@ -12,22 +12,21 @@ exports.rule = entities.Issue.onChange({
   },
   action: (ctx) => {
     const { issue } = ctx;
-    const helper = new Helper();
     const frontLink = issue.fields['Front Link'];
 
     // example of the issue link to MyConvermax admnin panel
     // https://myconvermax.com/sdtw-direct-wholesale/support/SS-6181
 
-    const issueLink = helper.getIssueLink(issue);
+    const issueLink = Helper.getIssueLink(issue);
 
     // issue.fields.Notify = issue.fields.Notify.bundle.values.find(value => value.name === "Done");
 
-    const message = helper.messageStateChanged(issue.summary, issueLink, issue.State.name);
+    const message = Helper.messageStateChanged(issue.summary, issueLink, issue.State.name);
 
     if (frontLink) {
-      const frontConversationId = helper.getConversationIdFromFrontlink(frontLink);
+      const frontConversationId = Helper.getConversationIdFromFrontlink(frontLink);
       if (frontConversationId) {
-        helper.sendEmailToConversation(message, frontConversationId);
+        Helper.sendEmailToConversation(message, frontConversationId);
       }
     } else if (issue.project.name === 'Support') {
       // нужно добавить специального пользователя в агенты и писать от него
@@ -37,9 +36,9 @@ exports.rule = entities.Issue.onChange({
       comment.permittedUsers.clear();
       comment.permittedGroups.clear();
     } else {
-      const recipients = helper.getRecipientsFromCC(issue.fields.CC);
+      const recipients = Helper.getRecipientsFromCC(issue.fields.CC);
       if (recipients) {
-        helper.sendNewEmail(message, recipients, issue);
+        Helper.sendNewEmail(message, recipients, issue);
       }
     }
     issue.fields.Notify = ctx.Notify.Done;
