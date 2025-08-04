@@ -63,7 +63,7 @@ class Helper {
     return `https://app.frontapp.com/open/${this.getConversationIdFromFrontlink(apiUrl)}`;
   }
 
-  putEmailSubject(state) {
+  getEmailSubject(state) {
     switch (state) {
       case 'Done': {
         return 'Convermax - Task Completed';
@@ -87,7 +87,7 @@ class Helper {
 
     const body = {
       body: message,
-      channel_id: 'alt:address:team@convermax.com',
+      channel_id: CONFIG.CHANNEL_ALT,
     };
 
     try {
@@ -111,7 +111,7 @@ class Helper {
     const body = {
       body: message,
       to: recipients,
-      subject: subject ?? this.putEmailSubject(issue.State.name),
+      subject: subject ?? this.getEmailSubject(issue.State.name),
     };
 
     try {
@@ -133,14 +133,10 @@ class Helper {
 
   convertYoutrackToHtml(text) {
     // Convert angle bracket links to HTML
-    text = text.replace(/<(https?:\/\/[^>]+)>/g, '<a href="$1">$1</a>');
-
-    // Convert YouTrack image syntax to HTML (basic version)
-    text = text.replace(/!([^(]+)\(([^)]+)\)\{[^}]*\}/g, '<img src="$2" alt="$1" />');
-
-    text = text.replace(/\n/g, '<br>');
-
-    return text;
+    return text
+      .replace(/<(https?:\/\/[^>]+)>/g, '<a href="$1">$1</a>') // Convert angle bracket links to HTML
+      .replace(/!([^(]+)\(([^)]+)\)\{[^}]*\}/g, '<img src="$2" alt="$1" />') // Convert YouTrack image syntax to HTML (basic version)
+      .replace(/\n/g, '<br>');
   }
 }
 module.exports = { Helper };
