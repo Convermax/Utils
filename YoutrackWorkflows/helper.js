@@ -60,9 +60,7 @@ class Helper {
   }
 
   convertFrontAppUrl(apiUrl) {
-    const parts = apiUrl.split('/'); // Split by "/"
-    const conversationId = parts.pop(); // Get the last part of the URL
-    return `https://app.frontapp.com/open/${conversationId}`;
+    return `https://app.frontapp.com/open/${this.getConversationIdFromFrontlink(apiUrl)}`;
   }
 
   putEmailSubject(state) {
