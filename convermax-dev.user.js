@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Convermax DEV
+// @name         Convermax Dev Client
 // @namespace    convermax-dev
-// @description  convermax-dev
+// @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.8
+// @version      20.9
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -41,8 +41,8 @@ function log(message) {
     } catch (ex) {}
 
     new MutationObserver((_, observer) => {
-      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find(
-        (s) => /\/search(-[^.]+)?(\.(min\.)?js)/.test(s.src),
+      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
+        /\/search(-[^.]+)?(\.(min\.)?js)/.test(s.src),
       );
 
       if ((scriptTag || inject) && !window.ConvermaxDevScriptInjected) {
