@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Convermax Dev Server
+// @name         Convermax Dev SERVER
 // @namespace    convermax-dev
 // @description  convermax-dev-server
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev-server.user.js

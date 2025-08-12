@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Convermax Dev Client
+// @name         Convermax Dev CLIENT
 // @namespace    convermax-dev
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
