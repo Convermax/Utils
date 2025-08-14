@@ -5,13 +5,13 @@ const workflow = require('@jetbrains/youtrack-scripting-api/workflow');
 exports.rule = entities.Issue.onChange({
   title: 'Send-email-on-issue-resolved',
   guard: (ctx) => {
-    const { issue } = ctx.issue;
+    const { issue } = ctx;
     const notifyValue = issue.fields.Notify?.name === 'Yes' || issue.fields.Notify?.name === 'Created';
     // workflow.message(issue.fields.Notify);
     return issue.fields.becomes('State', 'Done') && notifyValue;
   },
   action: (ctx) => {
-    const { issue } = ctx.issue;
+    const { issue } = ctx;
     const frontLink = issue.fields['Front Link'];
 
     // example of the issue link to MyConvermax admnin panel

@@ -6,14 +6,14 @@ const entities = require('@jetbrains/youtrack-scripting-api/entities');
 exports.rule = entities.Issue.onChange({
   title: 'Send-email-task-gets-on-work',
   guard: (ctx) => {
-    const { issue } = ctx.issue;
+    const { issue } = ctx;
     const notify = issue.fields.Notify.name === 'Yes';
     const frontLink = issue.fields['Front Link'];
 
     return issue.fields.becomes('State', 'New') && notify && frontLink;
   },
   action: (ctx) => {
-    const { issue } = ctx.issue;
+    const { issue } = ctx;
     const frontLink = issue.fields['Front Link'];
 
     const issueLink = Helper.getIssueLink(issue);

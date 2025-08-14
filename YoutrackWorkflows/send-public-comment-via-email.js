@@ -7,7 +7,7 @@ exports.rule = entities.Issue.onChange({
   // TODO: give the rule a human-readable title
   title: 'Send public comment via email',
   guard: (ctx) => {
-    const { issue } = ctx.issue;
+    const { issue } = ctx;
     const newComment = issue.comments.added.get(0) ?? null;
 
     if (issue.comments.isChanged && newComment) {
@@ -20,7 +20,7 @@ exports.rule = entities.Issue.onChange({
     return false;
   },
   action: (ctx) => {
-    const { issue } = ctx.issue;
+    const { issue } = ctx;
     const frontLink = issue.fields['Front Link'] ?? null;
 
     const issueLink = Helper.getIssueLink(issue);
