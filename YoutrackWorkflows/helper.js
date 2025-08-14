@@ -12,10 +12,10 @@ class Helper {
   }
 
   getConversationIdFromFrontlink(frontLink) {
-    const pathname = URL.canParse(frontLink) ? new URL(frontLink).pathname : null;
-    const conversationId = pathname?.split('/').at(-1);
+    const parts = frontLink.split('/');
+    const messageConversationId = parts[parts.length - 1].split('?')[0];
 
-    return !isNaN(Number(conversationId)) ? conversationId : null;
+    return messageConversationId || null;
   }
 
   messageStateChanged(taskName, tasklink, taskStatus) {
