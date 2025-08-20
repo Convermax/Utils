@@ -410,10 +410,7 @@ const actions = {
   common: {
     test: () => actions.common.storeId,
     get storeId() {
-      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.serverUrl
-        ?.replace('https://', '')
-        ?.replace('.myconvermax.com', '')
-        ?.replace('client.convermax.com/', '');
+      return window.unsafeWindow?.Convermax?.templates?.config?.requestConfig?.storeId;
     },
     get productId() {
       return window.unsafeWindow?.Convermax?.templates?.config?.productConfig?.localItemId;
