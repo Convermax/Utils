@@ -50,6 +50,20 @@ const actions = {
               active: true,
             }),
         },
+        {
+          label: 'Shopify theme preview link',
+          hotkey: 'Backquote',
+          action: () => {
+            const url = new URL(window.location.href);
+            const themeId = window.unsafeWindow?.Shopify?.theme?.id;
+
+            if (window.unsafeWindow?.Shopify?.theme?.role === 'unpublished' && themeId) {
+              url.searchParams.append('preview_theme_id', themeId);
+            }
+
+            GM_setClipboard(url.href);
+          },
+        },
       ],
       resources: [
         {
