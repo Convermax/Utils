@@ -51,17 +51,17 @@ const actions = {
             }),
         },
         {
-          label: 'Shopify theme preview link',
+          // label: 'Copy Shopify preview link',
           hotkey: 'Backquote',
           action: () => {
-            const url = new URL(window.location.href);
+            let url = window.location.href;
             const themeId = window.unsafeWindow?.Shopify?.theme?.id;
 
             if (window.unsafeWindow?.Shopify?.theme?.role === 'unpublished' && themeId) {
-              url.searchParams.append('preview_theme_id', themeId);
+              url = `${url}${url.includes('?') ? '&' : '?'}preview_theme_id=${themeId}`;
             }
 
-            GM_setClipboard(url.href);
+            GM_setClipboard(url);
           },
         },
       ],
@@ -447,6 +447,7 @@ const actions = {
           GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
       },
       {
+        // label: 'Copy Convermax StoreID',
         hotkey: 'Backquote',
         ctrlKey: true,
         action: () => GM_setClipboard(actions.common.storeId),
@@ -498,7 +499,7 @@ function registerActions(commands) {
     .filter(({ label }) => label)
     .sort((a, b) => (a.order || 9) - (b.order || 9))
     .forEach(({ hotkey, ctrlKey, label, action }) => {
-      const hotkeyStr = ` [${ctrlKey ? 'Ctrl' : 'Alt'} + ${hotkey}]`;
+      const hotkeyStr = ` [${ctrlKey ? 'Ctrl' : 'Alt'} + ${hotkey === 'Backquote' ? '`' : hotkey}]`;
       return GM_registerMenuCommand(`${label}${hotkey ? hotkeyStr : ''}`, action);
     });
   commands
