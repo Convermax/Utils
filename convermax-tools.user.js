@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.10
+// @version      0.9.11
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -646,6 +646,7 @@ function bypassBigCommerceStub() {
 
   if (
     window.location.href === 'https://login.bigcommerce.com/login' &&
+    !window.document.querySelector('.login-form .alert-box:not(:empty)') && // Failed login msg
     window.document.querySelector('input#user_email')?.value &&
     window.document.querySelector('input#user_password')?.value
   ) {
