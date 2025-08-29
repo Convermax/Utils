@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.11
+// @version      0.9.12
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -435,6 +435,11 @@ const actions = {
     get vehicle() {
       return window.unsafeWindow?.Convermax?.getVehicle();
     },
+    get serverUrl() {
+      return window.unsafeWindow?.Convermax.useDevServer
+        ? `https://localhost.convermax.dev/${this.storeId}`
+        : `https://${this.storeId}.myconvermax.com`;
+    },
     general: [
       {
         label: 'Convermax Admin',
@@ -460,7 +465,7 @@ const actions = {
             order: 4,
             action: () =>
               GM_openInTab(
-                `https://${actions.common.storeId}.myconvermax.com/ymm/fitments.html?productId=${actions.common.productId}&includeSource=true`,
+                `${actions.common.serverUrl}/ymm/fitments.html?productId=${actions.common.productId}&includeSource=true`,
                 { active: true },
               ),
           },
@@ -475,7 +480,7 @@ const actions = {
             order: 5,
             action: () => {
               if (actions.common.vehicle) {
-                const url = new URL(`https://${actions.common.storeId}.myconvermax.com/ymm/vehicleinfo.html`);
+                const url = new URL(`${actions.common.serverUrl}/ymm/vehicleinfo.html`);
                 for (const [key, value] of Object.entries(actions.common.vehicle)) {
                   url.searchParams.set(key, value);
                 }
