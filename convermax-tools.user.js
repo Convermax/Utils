@@ -630,7 +630,7 @@ function bypassBigCommerceStubInit() {
   const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
   const blackList = GM_getValue('bypassBigCommerceStubBlackList', []);
 
-  if (window.location.href.includes('guestTkn=')) {
+  if (isPreLaunch && window.location.href.includes('guestTkn=')) {
     return;
   }
 
