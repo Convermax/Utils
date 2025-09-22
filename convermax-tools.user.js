@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.12
+// @version      0.9.13
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -627,11 +627,21 @@ function bypassBigCommerceStubInit() {
     !!document.querySelector("head link[href*='bigcommerce.com/'][href*='prelaunch']") &&
     !!document.querySelector('input#guestTkn');
   const isMaintenance = !!document.querySelector("head link[data-stencil-stylesheet][href*='maintenance']");
+  const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
+  const blackList = GM_getValue('bypassBigCommerceStubBlackList', []);
 
-  if (isPreLaunch || isMaintenance) {
-    GM_setValue('bypassBigCommerceStubStartedAt', Date.now());
-    GM_setValue('bypassBigCommerceStubLocation', window.location.href);
-    window.location.replace(`${window.location.origin}/admin`);
+  if (isPreLaunch && window.location.href.includes('guestTkn=')) {
+    return;
+  }
+
+  if ((isPreLaunch || isMaintenance) && !blackList.includes(window.location.hostname)) {
+    if (redirectPath && !isActionExpired('bypassBigCommerceStub')) {
+      GM_setValue('bypassBigCommerceStubBlackList', [...blackList, window.location.hostname]);
+    } else {
+      GM_setValue('bypassBigCommerceStubStartedAt', Date.now());
+      GM_setValue('bypassBigCommerceStubLocation', window.location.href);
+      window.location.replace(`${window.location.origin}/admin`);
+    }
   }
 }
 
