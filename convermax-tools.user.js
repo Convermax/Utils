@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.13
+// @version      0.9.14
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -97,6 +97,24 @@ const actions = {
               action: () =>
                 GM_openInTab(
                   `https://admin.shopify.com/store/${actions.platforms.shopify.storeId}/collections/${actions.platforms.shopify.page.resourceId}`,
+                  { active: true },
+                ),
+            },
+          ],
+        },
+        {
+          test: () =>
+            actions.platforms.shopify.page &&
+            actions.platforms.shopify.page.resourceId &&
+            actions.platforms.shopify.page.pageType === 'page',
+          actions: [
+            {
+              label: 'Shopify Page',
+              hotkey: '2',
+              order: 2,
+              action: () =>
+                GM_openInTab(
+                  `https://admin.shopify.com/store/${actions.platforms.shopify.storeId}/pages/${actions.platforms.shopify.page.resourceId}`,
                   { active: true },
                 ),
             },
