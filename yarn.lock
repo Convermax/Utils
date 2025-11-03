@@ -72,6 +72,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jetbrains/youtrack-scripting-api@npm:^2022.1.46592":
+  version: 2022.1.46592
+  resolution: "@jetbrains/youtrack-scripting-api@npm:2022.1.46592"
+  checksum: 10c0/a2bcd838b2630c1bd44af5cfbf25661ffddc49cf1063cbcb2a9db7608a2bf028fd100b2d8f09ad839013b27290cade6d77f55bb83101a38264cce8944a695c88
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -2577,6 +2584,7 @@ __metadata:
   resolution: "utils@workspace:."
   dependencies:
     "@eslint/js": "npm:^8.57.1"
+    "@jetbrains/youtrack-scripting-api": "npm:^2022.1.46592"
     "@types/tampermonkey": "npm:^5.0.4"
     "@typescript-eslint/eslint-plugin": "npm:^6.21.0"
     "@typescript-eslint/parser": "npm:^6.21.0"
