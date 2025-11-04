@@ -730,6 +730,10 @@ function setupPermissionsButton() {
     'edit_theme_code',
     'pages',
     'links',
+    'view_files',
+    'create_files',
+    'edit_files',
+    'delete_files',
   ];
 
   const targetButton = document.querySelector('#create-new-store-button');
