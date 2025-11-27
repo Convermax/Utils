@@ -17,4 +17,13 @@
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.useDevServer = true;
+
+  window.addEventListener('htmx:configRequest', function (evt) {
+    if (evt.detail.path.includes('.myconvermax.com')) {
+      const { host } = new URL(evt.detail.path);
+      const storeId = host.replace('.myconvermax.com', '');
+
+      evt.detail.path = evt.detail.path.replace(host, `localhost.convermax.dev/${storeId}`);
+    }
+  });
 })();
