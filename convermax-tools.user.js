@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.15
+// @version      0.9.16
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -571,7 +571,7 @@ function fixNoAccessToShopifyAdmin() {
   const isAdminLogin = url.startsWith('https://admin.shopify.com/store/');
   const isNotAllowed = !!document
     .querySelector(
-      '#app .Polaris-LegacyCard .Polaris-Box .Polaris-EmptyState__ImageContainer + .Polaris-Box span.Polaris-Text--root.Polaris-Text--bodySm',
+      '#app .Polaris-Box .Polaris-EmptyState__ImageContainer + .Polaris-Box span.Polaris-Text--root.Polaris-Text--bodySm',
     )
     ?.innerText?.includes("doesn't have permission to view this page");
   const redirectPath = GM_getValue('fixShopifyAdminLocation', '');
