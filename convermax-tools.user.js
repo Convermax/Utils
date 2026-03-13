@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.9.16
+// @version      0.10.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -734,6 +734,9 @@ function setupPermissionsButton() {
     'create_files',
     'edit_files',
     'delete_files',
+    'preferences',
+    'manage_taxes_settings',
+    'manage_delivery_settings',
   ];
 
   const targetButton = document.querySelector('#create-new-store-button');
