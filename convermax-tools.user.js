@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.10.0
+// @version      0.11.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -715,6 +715,7 @@ function bypassBigCommerceStub() {
 
 function setupPermissionsButton() {
   const requiredPermissions = [
+    'dashboard',
     'products',
     'manage_products',
     'manage_inventory',
