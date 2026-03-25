@@ -103,10 +103,10 @@
 
       if (item) {
         const fields = [
-          item._rank != null ? `Rank: ${item._rank}` : null,
-          item._score != null ? `Score: ${item._score.toFixed(3)}` : null,
-          item.convermax_boost != null ? `Boost: ${item.convermax_boost.toFixed(3)}` : null,
-          item._popularity != null ? `Popularity: ${item._popularity}` : null,
+          item._rank !== null ? `Rank: ${item._rank}` : null,
+          item._score !== null ? `Score: ${item._score.toFixed(3)}` : null,
+          item.convermax_boost !== null ? `Boost: ${item.convermax_boost.toFixed(3)}` : null,
+          item._popularity !== null ? `Popularity: ${item._popularity}` : null,
         ].filter(Boolean);
 
         fields.forEach((text) => {
@@ -196,7 +196,7 @@
       if (typeof input === 'string') {
         url = input;
       } else if (input instanceof Request) {
-        url = input.url;
+        ({ url } = input);
       } else {
         return originalFetch(input, init);
       }
