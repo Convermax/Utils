@@ -287,8 +287,8 @@
 
             #explainModalClose {
                 position: absolute;
-                top: 10px;
-                right: 15px;
+                top: -1px;
+                right: 8px;
                 font-size: 20px;
                 cursor: pointer;
             }
@@ -302,6 +302,7 @@
                 border: 1px solid #888;
                 border-radius: 3px;
                 background-color: #f5f5f5;
+                color: rgb(0, 0, 0);
            }
 
            .explainScores .explainBtn:hover {
