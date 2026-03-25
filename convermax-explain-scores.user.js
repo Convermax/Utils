@@ -3,8 +3,8 @@
 // @namespace    convermax-dev
 // @version      2026-02-06
 // @description  Convermax Explain Scores
-// @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-explain-scores.js
-// @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-explain-scores.js
+// @downloadURL  https://github.com/Convermax/Utils/raw/icon-vehicle-dynamics/expain-scores-tampermonkey/convermax-explain-scores.user.js
+// @updateURL    https://github.com/Convermax/Utils/raw/icon-vehicle-dynamics/expain-scores-tampermonkey/convermax-explain-scores.user.js
 // @author       johders
 // @match        https://*/*
 // @run-at       document-start
