@@ -10,6 +10,7 @@
 // @run-at       document-start
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
 // @grant        none
+// @noframes
 // ==/UserScript==
 
 (function () {
@@ -103,10 +104,10 @@
 
       if (item) {
         const fields = [
-          item._rank !== null ? `Rank: ${item._rank}` : null,
-          item._score !== null ? `Score: ${item._score.toFixed(3)}` : null,
-          item.convermax_boost !== null ? `Boost: ${item.convermax_boost.toFixed(3)}` : null,
-          item._popularity !== null ? `Popularity: ${item._popularity}` : null,
+          item._rank ? `Rank: ${item._rank}` : null,
+          item._score ? `Score: ${item._score.toFixed(3)}` : null,
+          item.convermax_boost ? `Boost: ${item.convermax_boost.toFixed(3)}` : null,
+          item._popularity ? `Popularity: ${item._popularity}` : null,
         ].filter(Boolean);
 
         fields.forEach((text) => {
