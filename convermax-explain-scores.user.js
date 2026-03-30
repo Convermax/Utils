@@ -64,7 +64,7 @@
   }
 
   function insertOrUpdate() {
-    const containers = document.querySelectorAll('.cmRepeater_items');
+    const containers = document.querySelectorAll('.cm_SearchResult .cmRepeater_items');
     if (!containers.length) {
       return;
     }
