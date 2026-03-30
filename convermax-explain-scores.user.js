@@ -21,10 +21,10 @@
   init();
 
   function init() {
-      CM_addStyles();
-      setupExplainModal();
-      patchFetchForExplainScores();
-      observeItemsContainer();
+    addStyles();
+    setupExplainModal();
+    patchFetchForExplainScores();
+    observeItemsContainer();
   }
 
   function observeItemsContainer() {
@@ -32,17 +32,17 @@
     const response = window.Convermax?.getSearchResponse;
 
     if (!container || !response) {
-        setTimeout(observeItemsContainer, 300);
-        return;
+      setTimeout(observeItemsContainer, 300);
+      return;
     }
 
     const observer = new MutationObserver((mutationsList) => {
-        for (const mutation of mutationsList) {
-            if (mutation.type === 'childList') {
-                checkForLatestUpdates();
-                patchFetchForExplainScores();
-            }
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+          checkForLatestUpdates();
+          patchFetchForExplainScores();
         }
+      }
     });
 
     observer.observe(container, { childList: true, subtree: true });
@@ -152,7 +152,7 @@
       }
 
       const devServerParts = ['localhost.convermax.dev', 'search.json'];
-      const isDevServer = devServerParts.every(part => url.includes(part));
+      const isDevServer = devServerParts.every((part) => url.includes(part));
       const isProdServer = url.includes('myconvermax.com/search.json');
 
       if ((isProdServer || isDevServer) && !url.includes('explainscores=true')) {
@@ -172,7 +172,9 @@
 
   function setupExplainModal() {
     function create() {
-      if (document.getElementById('cm_explainModal')) return;
+      if (document.getElementById('cm_explainModal')) {
+        return;
+      }
 
       const modal = document.createElement('div');
       modal.id = 'cm_explainModal';
@@ -197,12 +199,12 @@
       });
     }
 
-  if (document.body) {
-    create();
-  } else {
-    document.addEventListener('DOMContentLoaded', create, { once: true });
+    if (document.body) {
+      create();
+    } else {
+      document.addEventListener('DOMContentLoaded', create, { once: true });
+    }
   }
-}
 
   function showModal(content) {
     const body = document.getElementById('cm_explainModalBody');
@@ -222,7 +224,7 @@
     return div.innerHTML;
   }
 
-  function CM_addStyles() {
+  function addStyles() {
     const styleEl = document.createElement('style');
     styleEl.textContent = `
             .cm_explainScores {
