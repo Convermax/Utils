@@ -8,7 +8,6 @@
 // @author       johders
 // @match        https://*/*
 // @run-at       document-start
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
 // @grant        none
 // @noframes
 // ==/UserScript==
@@ -16,51 +15,52 @@
 (function () {
   'use strict';
 
-  const includeExplanation = true;
   let convermaxItems = [];
-  let scheduled = false;
-
   let lastResponse = null;
 
-  addStyles();
-  setupModal();
-  waitForStore();
+  main();
 
-  if (includeExplanation) {
+  function main() {
+      addStyles();
+      setupModal();
+      appendExplainScores();
+      observeItemsContainer();
+  }
+
+  function observeItemsContainer() {
+    const container = document.querySelector('.cm_main-content .cm_SearchResult');
+    const response = window.Convermax?.getSearchResponse;
+
+    if (!container || !response) {
+        setTimeout(observeItemsContainer, 300);
+        return;
+    }
+
+    const observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'childList') {
+                checkForLatestUpdates();
+                appendExplainScores();
+            }
+        }
+    });
+
+    observer.observe(container, { childList: true, subtree: true });
+
+    checkForLatestUpdates();
     appendExplainScores();
   }
 
-  function waitForStore() {
-    if (!window.Convermax?.getSearchResponse) {
-      requestAnimationFrame(waitForStore);
-      return;
+  function checkForLatestUpdates() {
+    const response = window.Convermax.getSearchResponse();
+    if (response && response !== lastResponse) {
+      lastResponse = response;
+
+      const items = response?.items?._items || [];
+      convermaxItems = items.map((i) => i?._item).filter(Boolean);
+
+      insertOrUpdate();
     }
-
-    setupResponseObserver();
-  }
-
-  function setupResponseObserver() {
-    function checkForUpdates() {
-      const response = window.Convermax.getSearchResponse();
-      if (response && response !== lastResponse) {
-        lastResponse = response;
-
-        const items = response?.items?._items || [];
-        convermaxItems = items.map((i) => i?._item).filter(Boolean);
-
-        if (convermaxItems.length && !scheduled) {
-          scheduled = true;
-          requestAnimationFrame(() => {
-            insertOrUpdate();
-            scheduled = false;
-          });
-        }
-      }
-
-      requestAnimationFrame(checkForUpdates);
-    }
-
-    requestAnimationFrame(checkForUpdates);
   }
 
   function insertOrUpdate() {
@@ -218,35 +218,38 @@
   }
 
   function setupModal() {
-    if (!document.body) {
-      requestAnimationFrame(setupModal);
-      return;
-    }
+    function create() {
+      if (document.getElementById('explainModal')) return;
 
-    const modal = document.createElement('div');
-    modal.id = 'explainModal';
-    modal.style.display = 'none';
+      const modal = document.createElement('div');
+      modal.id = 'explainModal';
+      modal.style.display = 'none';
 
-    modal.innerHTML = `
+      modal.innerHTML = `
         <div id="explainModalContent">
-            <span id="explainModalClose">&times;</span>
-            <div id="explainModalBody"></div>
+          <span id="explainModalClose">&times;</span>
+          <div id="explainModalBody"></div>
         </div>`;
 
-    document.body.appendChild(modal);
+      document.body.appendChild(modal);
 
-    document.getElementById('explainModalClose').addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
+      document.getElementById('explainModalClose').addEventListener('click', () => {
         modal.style.display = 'none';
-      }
-    });
+      });
 
-    return modal;
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    }
+
+  if (document.body) {
+    create();
+  } else {
+    document.addEventListener('DOMContentLoaded', create, { once: true });
   }
+}
 
   function showModal(content) {
     const body = document.getElementById('explainModalBody');
