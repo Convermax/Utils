@@ -28,7 +28,7 @@
   }
 
   function observeItemsContainer() {
-    const container = document.querySelector('.cm_main-content .cm_SearchResult');
+    const container = document.querySelector('.cm_SearchResult');
     const response = window.Convermax?.getSearchResponse;
 
     if (!container || !response) {
@@ -40,7 +40,6 @@
       for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
           checkForLatestUpdates();
-          patchFetchForExplainScores();
         }
       }
     });
@@ -48,16 +47,14 @@
     observer.observe(container, { childList: true, subtree: true });
 
     checkForLatestUpdates();
-    patchFetchForExplainScores();
   }
 
   function checkForLatestUpdates() {
     const response = window.Convermax.getSearchResponse();
-    if (response && response !== lastResponse) {
+    if (response && response !== lastResponse && response?.items?._items?.length) {
       lastResponse = response;
 
-      const items = response?.items?._items || [];
-      convermaxItems = items.map((i) => i?._item).filter(Boolean);
+      convermaxItems = response?.items?._items.map((i) => i?._item).filter(Boolean) || [];
 
       insertOrUpdateScoreOverlays();
     }
@@ -78,7 +75,6 @@
     }
 
     const cards = Array.from(container.children);
-    const useIndexMatching = convermaxItems.length === cards.length;
 
     cards.forEach((card, index) => {
       const img = card.querySelector('img');
@@ -102,7 +98,7 @@
 
       overlay.innerHTML = '';
 
-      const item = useIndexMatching ? convermaxItems[index] : null;
+      const item = convermaxItems[index];
 
       if (item) {
         const fields = [
@@ -151,11 +147,7 @@
         return originalFetch(input, init);
       }
 
-      const devServerParts = ['localhost.convermax.dev', 'search.json'];
-      const isDevServer = devServerParts.every((part) => url.includes(part));
-      const isProdServer = url.includes('myconvermax.com/search.json');
-
-      if ((isProdServer || isDevServer) && !url.includes('explainscores=true')) {
+      if (/convermax\.(com|dev).*search\.json/.test(url) && !url.includes('explainscores=true')) {
         const newUrl = `${url}&explainscores=true`;
 
         if (input instanceof Request) {
@@ -236,7 +228,7 @@
                 font-size: 12px;
                 font-weight: bold;
                 border-radius: 3px;
-                z-index: 1000;
+                z-index: 90;
             }
 
             #cm_explainModal {
