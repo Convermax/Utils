@@ -18,12 +18,12 @@
   let convermaxItems = [];
   let lastResponse = null;
 
-  main();
+  init();
 
-  function main() {
+  function init() {
       CM_addStyles();
-      setupModal();
-      appendExplainScores();
+      setupExplainModal();
+      patchFetchForExplainScores();
       observeItemsContainer();
   }
 
@@ -40,7 +40,7 @@
         for (const mutation of mutationsList) {
             if (mutation.type === 'childList') {
                 checkForLatestUpdates();
-                appendExplainScores();
+                patchFetchForExplainScores();
             }
         }
     });
@@ -48,7 +48,7 @@
     observer.observe(container, { childList: true, subtree: true });
 
     checkForLatestUpdates();
-    appendExplainScores();
+    patchFetchForExplainScores();
   }
 
   function checkForLatestUpdates() {
@@ -59,11 +59,11 @@
       const items = response?.items?._items || [];
       convermaxItems = items.map((i) => i?._item).filter(Boolean);
 
-      insertOrUpdate();
+      insertOrUpdateScoreOverlays();
     }
   }
 
-  function insertOrUpdate() {
+  function insertOrUpdateScoreOverlays() {
     const containers = document.querySelectorAll('.cm_SearchResult .cmRepeater_items');
     if (!containers.length) {
       return;
@@ -137,7 +137,7 @@
     });
   }
 
-  function appendExplainScores() {
+  function patchFetchForExplainScores() {
     const originalFetch = window.fetch;
 
     window.fetch = function (input, init) {
@@ -170,7 +170,7 @@
     };
   }
 
-  function setupModal() {
+  function setupExplainModal() {
     function create() {
       if (document.getElementById('cm_explainModal')) return;
 
