@@ -137,23 +137,6 @@
     });
   }
 
-  function findItemForCard(card) {
-    if (!convermaxItems.length) {
-      return null;
-    }
-
-    const matchFinders = [tryFindById, tryFindByUrl];
-
-    for (const matchFinder of matchFinders) {
-      const match = matchFinder(card);
-      if (match) {
-        return match;
-      }
-    }
-
-    return null;
-  }
-
   function appendExplainScores() {
     const originalFetch = window.fetch;
 
@@ -168,7 +151,11 @@
         return originalFetch(input, init);
       }
 
-      if (url.includes('myconvermax.com/search.json') && !url.includes('explainscores=true')) {
+      const devServerParts = ['localhost.convermax.dev', 'search.json'];
+      const isDevServer = devServerParts.every(part => url.includes(part));
+      const isProdServer = url.includes('myconvermax.com/search.json');
+
+      if ((isProdServer || isDevServer) && !url.includes('explainscores=true')) {
         const newUrl = `${url}&explainscores=true`;
 
         if (input instanceof Request) {
@@ -222,11 +209,17 @@
     if (!body) {
       return;
     }
-    const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escaped = escapeHTML(content);
 
     body.innerHTML = `<div class="cm_modalText">${escaped}</div>`;
 
     document.getElementById('cm_explainModal').style.display = 'flex';
+  }
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   function CM_addStyles() {
