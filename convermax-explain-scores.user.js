@@ -3,8 +3,8 @@
 // @namespace    convermax-dev
 // @version      2026-02-06
 // @description  Convermax Explain Scores
-// @downloadURL  https://github.com/Convermax/Utils/raw/icon-vehicle-dynamics/expain-scores-tampermonkey/convermax-explain-scores.user.js
-// @updateURL    https://github.com/Convermax/Utils/raw/icon-vehicle-dynamics/expain-scores-tampermonkey/convermax-explain-scores.user.js
+// @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-explain-scores.user.js
+// @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-explain-scores.user.js
 // @author       johders
 // @match        https://*/*
 // @run-at       document-start
@@ -82,11 +82,11 @@
         return;
       }
 
-      let overlay = card.querySelector('.cm_explainScores');
+      let overlay = card.querySelector('.cm_explain-scores');
 
       if (!overlay) {
         overlay = document.createElement('div');
-        overlay.className = 'cm_explainScores';
+        overlay.className = 'cm_explain-scores';
 
         const style = window.getComputedStyle(card);
         if (style.position === 'static') {
@@ -117,7 +117,7 @@
         if (item._explanation) {
           const btn = document.createElement('button');
           btn.textContent = 'Explain';
-          btn.className = 'cm_explainBtn';
+          btn.className = 'cm_explain-scores_btn';
 
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -164,25 +164,25 @@
 
   function setupExplainModal() {
     function create() {
-      if (document.getElementById('cm_explainModal')) {
+      if (document.querySelector('.cm_explain-scores__dialog')) {
         return;
       }
 
       const modal = document.createElement('div');
-      modal.id = 'cm_explainModal';
+      modal.className = 'cm_dialog cm_explain-scores__dialog';
       modal.style.display = 'none';
 
       modal.innerHTML = `
-        <div id="cm_explainModalContent">
-          <span id="cm_explainModalClose">&times;</span>
-          <div id="cm_explainModalBody"></div>
+        <div class="cm_explain-scores_container">
+          <span class="cm_explain-scores_close">&times;</span>
+          <div class="cm_explain-scores_body"></div>
         </div>`;
 
       document.body.appendChild(modal);
 
-      document.getElementById('cm_explainModalClose').addEventListener('click', () => {
-        modal.style.display = 'none';
-      });
+      modal
+        .querySelector('.cm_explain-scores_close')
+        .addEventListener('click', () => (modal.style.display = 'none'));
 
       modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -199,15 +199,15 @@
   }
 
   function showModal(content) {
-    const body = document.getElementById('cm_explainModalBody');
+    const modal = document.querySelector('.cm_explain-scores__dialog');
+    const body = modal?.querySelector('.cm_explain-scores_body');
     if (!body) {
       return;
     }
     const escaped = escapeHTML(content);
 
-    body.innerHTML = `<div class="cm_modalText">${escaped}</div>`;
-
-    document.getElementById('cm_explainModal').style.display = 'flex';
+    body.innerHTML = `<div class="cm_explain-scores_text">${escaped}</div>`;
+    modal.style.display = 'flex';
   }
 
   function escapeHTML(str) {
@@ -219,11 +219,11 @@
   function addStyles() {
     const styleEl = document.createElement('style');
     styleEl.textContent = `
-            .cm_explainScores {
+            .cm_explain-scores {
                 position: absolute;
                 top: 5px;
                 left: 5px;
-                background-color: rgba(255,255,255,0.9);
+                background-color: #ffffff;
                 padding: 4px 6px;
                 font-size: 12px;
                 font-weight: bold;
@@ -231,21 +231,44 @@
                 z-index: 90;
             }
 
-            #cm_explainModal {
+            .cm_explain-scores_btn {
+                font-size: 12px;
+                font-weight: normal;
+                padding: 2px 6px;
+                margin-top: 4px;
+                cursor: pointer;
+                border: 1px solid #888888;
+                border-radius: 3px;
+                background-color: #f5f5f5;
+                color: #000000;
+            }
+
+            .cm_explain-scores_btn:hover {
+                background-color: #e0e0e0;
+            }
+
+            .cm_explain-scores_text {
+                white-space: pre-wrap;
+                font-size: 12px;
+                line-height: 1.4;
+                color: #000000;
+            }
+
+            .cm_dialog.cm_explain-scores__dialog {
                 position: fixed;
                 top: 0;
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: rgba(0,0,0,0.5);
+                background: #00000080;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 z-index: 2000;
             }
 
-            #cm_explainModalContent {
-                background: #fff;
+            .cm_dialog.cm_explain-scores__dialog .cm_explain-scores_container {
+                background: #ffffff;
                 padding: 20px;
                 border-radius: 8px;
                 max-width: 80%;
@@ -254,36 +277,13 @@
                 position: relative;
             }
 
-            #cm_explainModalClose {
+            .cm_dialog.cm_explain-scores__dialog .cm_explain-scores_close {
                 position: absolute;
                 top: -1px;
                 right: 8px;
                 font-size: 20px;
                 cursor: pointer;
-            }
-
-            .cm_explainScores .cm_explainBtn {
-                font-size: 12px;
-                font-weight: normal;
-                padding: 2px 6px;
-                margin-top: 4px;
-                cursor: pointer;
-                border: 1px solid #888;
-                border-radius: 3px;
-                background-color: #f5f5f5;
-                color: rgb(0, 0, 0);
-           }
-
-           .cm_explainScores .cm_explainBtn:hover {
-                background-color: #e0e0e0;
-           }
-
-           .cm_modalText {
-               white-space: pre-wrap;
-               font-size: 12px;
-               line-height: 1.4;
-               color: rgb(0, 0, 0);
-           }`;
+            }`;
 
     document.head.appendChild(styleEl);
   }
