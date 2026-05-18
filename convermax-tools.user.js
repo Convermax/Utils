@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.11.0
+// @version      0.12.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -579,7 +579,9 @@ function fixNoAccessToShopifyAdmin() {
   if (isAdminLogin && isNotAllowed) {
     GM_setValue('fixShopifyAdminStartedAt', Date.now());
     GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
-    window.location.replace(`https://partners.shopify.com/201897/stores?search_value=${storeId}`);
+    window.location.replace(
+      `https://dev.shopify.com/dashboard/129335902/stores?store_type=collaborations&search_term=${storeId}`,
+    );
     return true;
   } else if (isAdminLogin && !isActionExpired('fixShopifyAdmin') && redirectPath) {
     GM_setValue('fixShopifyAdminLocation', '');
@@ -595,24 +597,26 @@ function fixNoStoreAtShopifyPartners() {
   }
 
   const url = window.location.href;
-  const isPartnersSearch = url.startsWith('https://partners.shopify.com/201897/stores?search_value=');
+  const isPartnersSearch =
+    url.startsWith('https://dev.shopify.com/dashboard/129335902/stores') && url.includes('&search_term=');
   const isNoResults = !!document
-    .querySelector(
-      '#AppFrameMain .Polaris-ResourceList__EmptySearchResultWrapper .Polaris-Text--root.Polaris-Text--headingLg',
-    )
+    .querySelector('#stores-table .w-full p.text-body')
     ?.innerText?.includes('No stores found');
-  const isTabSelected = url.includes('tab=');
-  const Results = document.querySelectorAll(
-    '#AppFrameMain .Polaris-ResourceList .Polaris-ResourceItem__ListItem',
-  );
+  const Results = document.querySelectorAll('#stores-table table tbody tr');
 
-  if (isPartnersSearch && isNoResults && !isTabSelected) {
-    window.location.replace(`${url}&tab=inactive`);
+  if (isPartnersSearch && isNoResults && url.includes('store_type=collaborations')) {
+    window.location.replace(url.replace('store_type=collaborations', 'store_type=dev'));
     return true;
-  } else if (isPartnersSearch && !isTabSelected && [...Results].length) {
-    const form = Results[0].querySelector('form[action^="/201897/stores/"][action$="/login_managed"]');
-    form.removeAttribute('target');
-    form.querySelector('button[type="submit"]').click();
+  } else if (isPartnersSearch && isNoResults && url.includes('store_type=dev')) {
+    window.location.replace(url.replace('store_type=dev', 'store_type=client_transfer'));
+    return true;
+  } else if (
+    isPartnersSearch &&
+    [...Results].length &&
+    Results[0].getAttribute('data-controller') === 'row-link'
+  ) {
+    const link = Results[0].querySelector('a').href;
+    window.location.replace(link);
     return true;
   }
   return false;
@@ -740,30 +744,31 @@ function setupPermissionsButton() {
     'manage_delivery_settings',
   ];
 
-  const targetButton = document.querySelector('#create-new-store-button');
+  const targetButton = document.querySelector('#collaboration-request-submit-button');
 
   const button = document.createElement('button');
   button.textContent = 'Select permissions';
-  button.className = 'Polaris-Button Polaris-Button--primary';
-  button.style.marginLeft = '10px';
+  button.className = 'button button-variant-secondary button-size-medium';
   button.setAttribute('type', 'button');
 
   button.addEventListener('click', () => {
     requiredPermissions.forEach((permission) => {
-      const checkbox = document.querySelector(`input#${permission}.Polaris-Checkbox__Input`);
+      const checkbox = document.querySelector(`input[type='checkbox'][data-node-id$='${permission}'`);
       if (checkbox && !checkbox.checked) {
         checkbox.click();
+      } else if (!checkbox) {
+        console.log('Checkbox not found for permission:', permission);
       }
     });
 
-    const textArea = document.querySelector('textarea#PolarisTextField2');
+    const textArea = document.querySelector('textarea#collaboration-request-message');
     if (textArea) {
       textArea.value = 'Convermax Team: Requesting access to help you with our app.';
       textArea.dispatchEvent(new Event('input', { bubbles: true }));
     }
   });
 
-  targetButton.parentNode.insertBefore(button, targetButton.nextSibling);
+  targetButton.parentNode.insertBefore(button, targetButton);
 }
 
 (function () {
@@ -784,11 +789,11 @@ function setupPermissionsButton() {
   if (url.startsWith('https://admin.shopify.com/store/')) {
     ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
   }
-  if (url.startsWith('https://partners.shopify.com/201897/stores?search_value=')) {
+  if (url.startsWith('https://dev.shopify.com/dashboard/129335902/stores') && url.includes('&search_term=')) {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
   }
-  if (url.startsWith('https://partners.shopify.com/')) {
-    ensureContextIsSet(() => document.querySelector('#create-new-store-button'), 10000).then(() =>
+  if (url.startsWith('https://dev.shopify.com/dashboard/129335902/stores/collaborations/new')) {
+    ensureContextIsSet(() => document.querySelector('#collaboration-request-submit-button'), 10000).then(() =>
       setupPermissionsButton(),
     );
   }
