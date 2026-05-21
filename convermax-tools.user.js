@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.12.0
+// @version      0.14.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -15,6 +15,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        unsafeWindow
+// @grant        window.onurlchange
 // @sandbox      JavaScript
 // @noframes
 // ==/UserScript==
@@ -610,6 +611,14 @@ function fixNoStoreAtShopifyPartners() {
   } else if (isPartnersSearch && isNoResults && url.includes('store_type=dev')) {
     window.location.replace(url.replace('store_type=dev', 'store_type=client_transfer'));
     return true;
+  } else if (isPartnersSearch && isNoResults && url.includes('store_type=client_transfer')) {
+    const requestButton = window.document.querySelector(
+      'a[href="/dashboard/129335902/stores/collaborations/new"]',
+    );
+    const storeId = new URL(url)?.searchParams?.get('search_term');
+    if (requestButton && storeId) {
+      requestButton.setAttribute('href', `${requestButton.getAttribute('href')}?store_url=${storeId}`);
+    }
   } else if (
     isPartnersSearch &&
     [...Results].length &&
@@ -622,10 +631,32 @@ function fixNoStoreAtShopifyPartners() {
   return false;
 }
 
-function bypassShopifyStub() {
+function bypassShopifyStubInit() {
   if (window.location.pathname.match(/(\/\w{2})?\/password/) && actions.platforms.shopify.test()) {
+    GM_setValue('bypassShopifyStubStartedAt', Date.now());
     window.location.assign(`${window.location.origin}/admin/themes`);
   }
+}
+
+function bypassShopifyStub() {
+  if (isActionExpired('bypassShopifyStub')) {
+    return true;
+  }
+
+  const viewStoreButton = window.document.querySelector('s-internal-button:not([icon="view"])');
+
+  if (viewStoreButton) {
+    const _open = window.unsafeWindow.open;
+    window.unsafeWindow.open = function (...args) {
+      if (args[1] === '_blank') {
+        args[1] = '_self';
+      }
+      return _open.apply(this, args);
+    };
+    viewStoreButton?.click();
+    return true;
+  }
+  return false;
 }
 
 function ensureContextIsSet(getContext, timeout) {
@@ -744,6 +775,11 @@ function setupPermissionsButton() {
     'manage_delivery_settings',
   ];
 
+  if (window.location.href.includes('?store_url=')) {
+    const storeInput = window.document.querySelector('#store-url-input');
+    setTimeout(() => storeInput?.dispatchEvent(new Event('input', { bubbles: true })), 0);
+  }
+
   const targetButton = document.querySelector('#collaboration-request-submit-button');
 
   const button = document.createElement('button');
@@ -771,10 +807,35 @@ function setupPermissionsButton() {
   targetButton.parentNode.insertBefore(button, targetButton);
 }
 
-(function () {
-  'use strict';
+function injectShopifyPartnersStoreRequest() {
+  const header = window.document.querySelector('.ui-title-bar__main-group .ui-title-bar__heading-group');
+  const collaboratorStatus = window.document.querySelector(
+    '.ui-layout__section--secondary .ui-card__section .badge',
+  );
+  const storeId = window.document
+    .querySelector('a[href$=".myshopify.com"]')
+    ?.getAttribute('href')
+    ?.match(/https?:\/\/([^.]+)\.myshopify\.com/)?.[1];
+  const storeCode = window.location.pathname.split('/').filter(Boolean).at(-1);
 
-  bypassShopifyStub();
+  if ((!collaboratorStatus || collaboratorStatus.textContent === 'Approved') && header && storeId) {
+    const button = document.createElement('a');
+    button.textContent = collaboratorStatus ? 'Log in' : `Request access`;
+    button.className = 'ui-button ui-button--primary';
+    button.style.marginLeft = 'auto';
+    button.setAttribute(
+      'href',
+      collaboratorStatus
+        ? `https://dev.shopify.com/dashboard/129335902/stores/${storeCode}/collaborator_login`
+        : `https://dev.shopify.com/dashboard/129335902/stores/collaborations/new?store_url=${storeId}`,
+    );
+
+    header.appendChild(button);
+  }
+}
+
+function main() {
+  bypassShopifyStubInit();
   bypassBigCommerceStubInit();
 
   ensureContextIsSet(() => actions.platforms.some((p) => p.test()), 10000).then(() => {
@@ -797,7 +858,18 @@ function setupPermissionsButton() {
       setupPermissionsButton(),
     );
   }
-
+  if (/^https:\/\/partners\.shopify\.com\/201897\/stores\/\d+/.test(url)) {
+    ensureContextIsSet(
+      () => window.document.querySelector('.ui-title-bar__main-group .ui-title-bar__heading-group'),
+      10000,
+    ).then(() => injectShopifyPartnersStoreRequest());
+  }
+  if (
+    !isActionExpired('bypassShopifyStub') &&
+    /^https:\/\/admin\.shopify\.com\/store\/[^/]+\/themes/.test(url)
+  ) {
+    ensureContextIsSet(() => bypassShopifyStub(), 10000);
+  }
   const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
   const redirectURL = redirectPath ? new URL(redirectPath) : null;
   if (
@@ -808,4 +880,12 @@ function setupPermissionsButton() {
   ) {
     ensureContextIsSet(() => bypassBigCommerceStub(), 10000);
   }
+}
+
+(function () {
+  if (window.onurlchange === null) {
+    window.addEventListener('urlchange', main);
+  }
+
+  main();
 })();
