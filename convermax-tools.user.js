@@ -643,9 +643,9 @@ function bypassShopifyStub() {
     return true;
   }
 
-  const button = window.document.querySelector('s-internal-button:not([icon="view"])');
+  const viewStoreButton = window.document.querySelector('s-internal-button:not([icon="view"])');
 
-  if (button) {
+  if (viewStoreButton) {
     const _open = window.unsafeWindow.open;
     window.unsafeWindow.open = function (...args) {
       if (args[1] === '_blank') {
@@ -653,7 +653,7 @@ function bypassShopifyStub() {
       }
       return _open.apply(this, args);
     };
-    button?.click();
+    viewStoreButton?.click();
     return true;
   }
   return false;
