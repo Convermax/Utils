@@ -631,10 +631,32 @@ function fixNoStoreAtShopifyPartners() {
   return false;
 }
 
-function bypassShopifyStub() {
+function bypassShopifyStubInit() {
   if (window.location.pathname.match(/(\/\w{2})?\/password/) && actions.platforms.shopify.test()) {
+    GM_setValue('bypassShopifyStubStartedAt', Date.now());
     window.location.assign(`${window.location.origin}/admin/themes`);
   }
+}
+
+function bypassShopifyStub() {
+  if (isActionExpired('bypassShopifyStub')) {
+    return true;
+  }
+
+  const button = window.document.querySelector('s-internal-button:not([icon="view"])');
+
+  if (button) {
+    const _open = window.unsafeWindow.open;
+    window.unsafeWindow.open = function (...args) {
+      if (args[1] === '_blank') {
+        args[1] = '_self';
+      }
+      return _open.apply(this, args);
+    };
+    button?.click();
+    return true;
+  }
+  return false;
 }
 
 function ensureContextIsSet(getContext, timeout) {
@@ -813,7 +835,7 @@ function injectShopifyPartnersStoreRequest() {
 }
 
 function main() {
-  bypassShopifyStub();
+  bypassShopifyStubInit();
   bypassBigCommerceStubInit();
 
   ensureContextIsSet(() => actions.platforms.some((p) => p.test()), 10000).then(() => {
@@ -841,6 +863,12 @@ function main() {
       () => window.document.querySelector('.ui-title-bar__main-group .ui-title-bar__heading-group'),
       10000,
     ).then(() => injectShopifyPartnersStoreRequest());
+  }
+  if (
+    !isActionExpired('bypassShopifyStub') &&
+    /^https:\/\/admin\.shopify\.com\/store\/[^/]+\/themes/.test(url)
+  ) {
+    ensureContextIsSet(() => bypassShopifyStub(), 10000);
   }
   const redirectPath = GM_getValue('bypassBigCommerceStubLocation', '');
   const redirectURL = redirectPath ? new URL(redirectPath) : null;
