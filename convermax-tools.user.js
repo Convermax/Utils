@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.0
+// @version      0.14.1
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -883,7 +883,7 @@ function main() {
 }
 
 (function () {
-  if (window.onurlchange === null) {
+  if (window.onurlchange === null && window.location.href.startsWith('https://dev.shopify.com/')) {
     window.addEventListener('urlchange', main);
   }
 
