@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.1
+// @version      0.14.2
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -611,14 +611,6 @@ function fixNoStoreAtShopifyPartners() {
   } else if (isPartnersSearch && isNoResults && url.includes('store_type=dev')) {
     window.location.replace(url.replace('store_type=dev', 'store_type=client_transfer'));
     return true;
-  } else if (isPartnersSearch && isNoResults && url.includes('store_type=client_transfer')) {
-    const requestButton = window.document.querySelector(
-      'a[href="/dashboard/129335902/stores/collaborations/new"]',
-    );
-    const storeId = new URL(url)?.searchParams?.get('search_term');
-    if (requestButton && storeId) {
-      requestButton.setAttribute('href', `${requestButton.getAttribute('href')}?store_url=${storeId}`);
-    }
   } else if (
     isPartnersSearch &&
     [...Results].length &&
@@ -626,6 +618,18 @@ function fixNoStoreAtShopifyPartners() {
   ) {
     const link = Results[0].querySelector('a').href;
     window.location.replace(link);
+    return true;
+  } else if (
+    isPartnersSearch &&
+    (isNoResults || Results[0].querySelector('td:nth-child(3)').innerText.includes('Expired'))
+  ) {
+    const requestButton = window.document.querySelector(
+      'a[href="/dashboard/129335902/stores/collaborations/new"]',
+    );
+    const storeId = new URL(url)?.searchParams?.get('search_term');
+    if (requestButton && storeId) {
+      requestButton.setAttribute('href', `${requestButton.getAttribute('href')}?store_url=${storeId}`);
+    }
     return true;
   }
   return false;
@@ -775,6 +779,10 @@ function setupPermissionsButton() {
     'manage_delivery_settings',
   ];
 
+  if (window.document.querySelector('#permissions-button')) {
+    return;
+  }
+
   if (window.location.href.includes('?store_url=')) {
     const storeInput = window.document.querySelector('#store-url-input');
     setTimeout(() => storeInput?.dispatchEvent(new Event('input', { bubbles: true })), 0);
@@ -786,6 +794,7 @@ function setupPermissionsButton() {
   button.textContent = 'Select permissions';
   button.className = 'button button-variant-secondary button-size-medium';
   button.setAttribute('type', 'button');
+  button.id = 'permissions-button';
 
   button.addEventListener('click', () => {
     requiredPermissions.forEach((permission) => {
@@ -805,6 +814,7 @@ function setupPermissionsButton() {
   });
 
   targetButton.parentNode.insertBefore(button, targetButton);
+  targetButton.parentNode.classList.add('gap-2');
 }
 
 function injectShopifyPartnersStoreRequest() {
