@@ -4,7 +4,7 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.9
+// @version      20.10
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -28,6 +28,11 @@ function log(message) {
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
+  window.Convermax.config.guidedSearch = {
+    ...window.Convermax.config.guidedSearch,
+    enabled: true,
+    sidecarUrl: 'https://localhost.convermax.dev:3000/temp/guided-search.js',
+  };
 
   function createMutationObserver() {
     if (!document.body) {
