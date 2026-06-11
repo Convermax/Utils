@@ -4,7 +4,7 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.10
+// @version      20.11
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -28,11 +28,19 @@ function log(message) {
   window.Convermax = window.Convermax || {};
   window.Convermax.config = window.Convermax.config || {};
   window.Convermax.devScriptEnabled = true;
-  window.Convermax.config.guidedSearch = {
-    ...window.Convermax.config.guidedSearch,
-    enabled: true,
-    sidecarUrl: 'https://localhost.convermax.dev:3000/temp/guided-search.js',
-  };
+  seedGuidedSearchConfig();
+
+  // Storefront themes may replace window.Convermax.config wholesale in inline
+  // scripts (cimotorsports.com does), wiping the document-start seed — so the
+  // seed is re-applied right before the local script injection too.
+  function seedGuidedSearchConfig() {
+    window.Convermax.config = window.Convermax.config || {};
+    window.Convermax.config.guidedSearch = {
+      ...window.Convermax.config.guidedSearch,
+      enabled: true,
+      sidecarUrl: 'https://localhost.convermax.dev:3000/temp/guided-search.js',
+    };
+  }
 
   function createMutationObserver() {
     if (!document.body) {
@@ -70,6 +78,7 @@ function log(message) {
 
           log(`${scriptInfo.name} v${scriptInfo.version} UserScript`);
 
+          seedGuidedSearchConfig();
           injectScript('https://localhost.convermax.dev:3000/temp/search.js');
         }, 500); // set it to 1000 or higher if script won't load
       }
