@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.2
+// @version      0.14.3
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -821,21 +821,25 @@ function injectShopifyPartnersStoreRequest() {
   const header = window.document.querySelector('.ui-title-bar__main-group .ui-title-bar__heading-group');
   const collaboratorStatus = window.document.querySelector(
     '.ui-layout__section--secondary .ui-card__section .badge',
-  );
+  )?.textContent;
   const storeId = window.document
     .querySelector('a[href$=".myshopify.com"]')
     ?.getAttribute('href')
     ?.match(/https?:\/\/([^.]+)\.myshopify\.com/)?.[1];
   const storeCode = window.location.pathname.split('/').filter(Boolean).at(-1);
 
-  if ((!collaboratorStatus || collaboratorStatus.textContent === 'Approved') && header && storeId) {
+  if (
+    (!collaboratorStatus || collaboratorStatus === 'Approved' || collaboratorStatus === 'Expired') &&
+    header &&
+    storeId
+  ) {
     const button = document.createElement('a');
-    button.textContent = collaboratorStatus ? 'Log in' : `Request access`;
+    button.textContent = collaboratorStatus === 'Approved' ? 'Log in' : `Request access`;
     button.className = 'ui-button ui-button--primary';
     button.style.marginLeft = 'auto';
     button.setAttribute(
       'href',
-      collaboratorStatus
+      collaboratorStatus === 'Approved'
         ? `https://dev.shopify.com/dashboard/129335902/stores/${storeCode}/collaborator_login`
         : `https://dev.shopify.com/dashboard/129335902/stores/collaborations/new?store_url=${storeId}`,
     );
