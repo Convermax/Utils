@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.3
+// @version      0.14.4
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -32,7 +32,12 @@ const actions = {
         return window.unsafeWindow?.ShopifyAnalytics?.meta?.page;
       },
       get storeId() {
-        return window.unsafeWindow?.Shopify.shop.replace('.myshopify.com', '');
+        return (
+          window.unsafeWindow?.Shopify?.shop.replace('.myshopify.com', '') ??
+          (window.location.host.endsWith('.myshopify.com')
+            ? window.location.host.replace('.myshopify.com', '')
+            : null)
+        );
       },
       general: [
         {
