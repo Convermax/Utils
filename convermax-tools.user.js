@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.4
+// @version      0.14.5
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -759,29 +759,29 @@ function bypassBigCommerceStub() {
 
 function setupPermissionsButton() {
   const requiredPermissions = [
-    'dashboard',
-    'products',
-    'manage_products',
-    'manage_inventory',
-    'delete_products',
-    'metaobject_definitions_view',
-    'metaobjects_view',
-    'metaobject_definitions_edit',
-    'metaobjects_edit',
-    'metaobject_definitions_delete',
-    'metaobjects_delete',
-    'applications',
-    'themes',
-    'edit_theme_code',
-    'pages',
-    'links',
-    'view_files',
-    'create_files',
-    'edit_files',
-    'delete_files',
-    'preferences',
-    'manage_taxes_settings',
-    'manage_delivery_settings',
+    'home_dashboard',
+    'products_products',
+    'products_manage_products',
+    'products_manage_inventory',
+    'products_delete_products',
+    'content_metaobject_definitions_view',
+    'content_metaobjects_view',
+    'content_metaobject_definitions_edit',
+    'content_metaobjects_edit',
+    'content_metaobject_definitions_delete',
+    'content_metaobjects_delete',
+    'applications_applications',
+    'online_store_themes',
+    'online_store_edit_theme_code',
+    'online_store_pages',
+    'content_links',
+    'content_view_files',
+    'content_create_files',
+    'content_edit_files',
+    'content_delete_files',
+    'settings_preferences',
+    'settings_manage_taxes_settings',
+    'settings_manage_delivery_settings',
   ];
 
   if (window.document.querySelector('#permissions-button')) {
@@ -803,7 +803,9 @@ function setupPermissionsButton() {
 
   button.addEventListener('click', () => {
     requiredPermissions.forEach((permission) => {
-      const checkbox = document.querySelector(`input[type='checkbox'][data-node-id$='${permission}'`);
+      const checkbox = document.querySelector(
+        `input[type='checkbox'][name='permissions[]'][value='${permission}']`,
+      );
       if (checkbox && !checkbox.checked) {
         checkbox.click();
       } else if (!checkbox) {
