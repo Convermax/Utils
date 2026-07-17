@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.5
+// @version      0.14.6
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -859,7 +859,7 @@ function main() {
   bypassShopifyStubInit();
   bypassBigCommerceStubInit();
 
-  ensureContextIsSet(() => actions.platforms.some((p) => p.test()), 10000).then(() => {
+  ensureContextIsSet(() => Object.values(actions.platforms).some((p) => p.test()), 10000).then(() => {
     registerPlatformActions();
   });
 
