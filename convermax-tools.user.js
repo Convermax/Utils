@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.14.6
+// @version      0.15.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -129,7 +129,10 @@ const actions = {
       ],
     },
     bigcommerce: {
-      test: () => window.unsafeWindow?.BCData && actions.platforms.bigcommerce.storeHash,
+      test: () =>
+        (window.unsafeWindow?.BCData ||
+          document.querySelector('head meta[name="platform"][content^="bigcommerce"]')) &&
+        actions.platforms.bigcommerce.storeHash,
       // When logged in to the store admin BC renders JS with admin bar init even if it's hidden,
       // we parse those init params to get channelId and categoryId
       _bcAdminBarParams: (() => {
@@ -137,13 +140,19 @@ const actions = {
         return paramsStr?.split(/',\s+'/);
       })(),
       get storeHash() {
-        return document
-          .querySelector("head link[href*='.bigcommerce.com/s-']")
-          ?.href?.split('s-')[1]
-          .split('/')[0];
+        return (
+          document
+            .querySelector("head link[href*='.bigcommerce.com/s-']")
+            ?.href?.split('s-')[1]
+            .split('/')[0] ?? document.querySelector('head meta[name="store_hash"]')?.content
+        );
       },
       get productId() {
-        return document.querySelector('input[name=product_id]')?.value;
+        return (
+          document.querySelector('input[name=product_id]')?.value ??
+          (document.querySelector('head meta[property="og:image"]')?.content &&
+            document.querySelector('section:first-of-type form input[name="id"]')?.value)
+        );
       },
       get channelId() {
         return this._bcAdminBarParams?.[1];
