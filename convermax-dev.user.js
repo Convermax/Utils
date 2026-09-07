@@ -272,7 +272,10 @@
     'load',
     () => {
       updatePage();
-      observer.disconnect();
+
+      if (!selectedStore) {
+        observer.disconnect();
+      }
     },
     { once: true },
   );
