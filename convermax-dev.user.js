@@ -112,28 +112,11 @@
     }
 
     if (selectedStore) {
-      removeProductionAssets();
-
       if (!localStyle) {
         injectLocalAssets();
-        return;
       }
-
-      // The Client bundle can also insert search.css. Keep one local copy.
-      const localCssUrl = new URL(localStyle.href);
-
-      for (const element of document.querySelectorAll('link[rel="stylesheet"][href]')) {
-        const url = new URL(element.href, location.href);
-
-        if (
-          element !== localStyle &&
-          url.origin === localCssUrl.origin &&
-          url.pathname === localCssUrl.pathname
-        ) {
-          element.remove();
-        }
-      }
-
+    
+      removeProductionAssets();
       return;
     }
 
