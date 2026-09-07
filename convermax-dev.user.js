@@ -23,7 +23,7 @@
   let stores;
   let selectedStore;
   let productionScript;
-  let localStyle;
+  let localScript;
   let forceInjection = false;
   let reloadStarted = false;
 
@@ -58,7 +58,6 @@
     }
 
     return {
-      element,
       url,
       scriptId,
       backendStoreId: customerHost?.[1] || staticScriptName,
@@ -67,11 +66,9 @@
 
   function removeProductionAssets() {
     if (!productionScript) {
-      const scripts = [...document.querySelectorAll('script[src]')]
+      productionScript = [...document.querySelectorAll('script[src]')]
         .map(parseScript)
-        .filter(Boolean);
-
-      productionScript = scripts[0];
+        .find(Boolean);
     }
 
     if (!productionScript) {
@@ -106,17 +103,30 @@
     }
   }
 
+  function injectLocalScript() {
+    localScript = document.createElement('script');
+    localScript.src = `${selectedStore.assetBaseUrl}/search.js`;
+    localScript.async = false;
+    localScript.onerror = () => {
+      returnToProduction(`Failed to load ${localScript.src}`);
+    };
+
+    document.head.appendChild(localScript);
+    log(`Using "${selectedStore.storeId}" from session storage.`);
+  }
+
   function updatePage() {
     if (!document.head) {
       return;
     }
 
     if (selectedStore) {
-      if (!localStyle) {
-        injectLocalAssets();
-      }
-    
       removeProductionAssets();
+
+      if (!localScript) {
+        injectLocalScript();
+      }
+
       return;
     }
 
@@ -170,7 +180,9 @@
     }
 
     if (match.storeId === failedStoreId) {
-      log(`Local store "${match.storeId}" failed on the previous load. Production retained.`);
+      log(
+        `Local store "${match.storeId}" failed on the previous load. Production retained.`,
+      );
       observer.disconnect();
       return;
     }
@@ -198,35 +210,6 @@
     observer.disconnect();
     log(`Matched "${match.storeId}" via ${matchSource}. Reloading with local assets.`);
     location.reload();
-  }
-
-  function injectLocalAssets() {
-    window.Convermax.config = window.Convermax.config || {};
-
-    if (!window.Convermax.config.storeId && selectedStore.backendStoreId) {
-      window.Convermax.config.storeId = selectedStore.backendStoreId;
-    }
-
-    localStyle = document.createElement('link');
-    localStyle.rel = 'stylesheet';
-    localStyle.href = `${selectedStore.assetBaseUrl}/search.css`;
-    localStyle.onerror = () => returnToProduction(`Failed to load ${localStyle.href}`);
-
-    const cssOverride = document.querySelector('link[data-cm-override]');
-
-    if (cssOverride) {
-      cssOverride.before(localStyle);
-    } else {
-      document.head.appendChild(localStyle);
-    }
-
-    const localScript = document.createElement('script');
-    localScript.src = `${selectedStore.assetBaseUrl}/search.js`;
-    localScript.async = false;
-    localScript.onerror = () => returnToProduction(`Failed to load ${localScript.src}`);
-    document.head.appendChild(localScript);
-
-    log(`Using "${selectedStore.storeId}" from session storage.`);
   }
 
   function returnToProduction(message) {
@@ -285,6 +268,15 @@
     attributeFilter: ['src', 'href'],
   });
 
+  window.addEventListener(
+    'load',
+    () => {
+      updatePage();
+      observer.disconnect();
+    },
+    { once: true },
+  );
+
   if (cachedStore) {
     if (window.Convermax?.loaded) {
       selectedStore = cachedStore;
@@ -330,15 +322,4 @@
         observer.disconnect();
       });
   }
-
-  window.addEventListener('keydown', (event) => {
-    if (!event.altKey || event.code !== 'Backquote' || !localStyle) {
-      return;
-    }
-
-    const url = new URL(localStyle.href);
-    url.searchParams.set('force_reload', Date.now());
-    localStyle.href = url.href;
-    log('CSS reloaded.');
-  });
 })();
