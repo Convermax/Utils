@@ -130,6 +130,10 @@
     if (selectedStore) {
       removeProductionAssets();
 
+      if (document.readyState === 'loading') {
+        return;
+      }
+
       if (!localScript) {
         injectLocalScript();
       }
@@ -261,7 +265,7 @@
       ) {
         return store;
       }
-    } catch {
+       } catch {
       // Storage may be unavailable on this page.
     }
 
@@ -312,6 +316,8 @@
     attributes: true,
     attributeFilter: ['src', 'href'],
   });
+
+  document.addEventListener('DOMContentLoaded', updatePage, { once: true });
 
   window.addEventListener(
     'load',
