@@ -4,118 +4,372 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      20.11
+// @version      21
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
 // @exclude      *://*convermax.com/*
+// @exclude      *://localhost.convermax.dev/*
 // ==/UserScript==
-
-// eslint-disable-next-line no-undef, camelcase
-const scriptInfo = GM_info.script;
-
-function log(message) {
-  // eslint-disable-next-line no-console
-  console.log(
-    `%c${message}`,
-    'color: #B0D142; background: black; font-size: 24px; text-align: center; padding: 1rem; text-transform: uppercase; font-weight: bold; font-family: Roboto, Cantarell, sans-serif;',
-  );
-}
 
 (function () {
   'use strict';
 
-  window.Convermax = window.Convermax || {};
-  window.Convermax.config = window.Convermax.config || {};
-  window.Convermax.devScriptEnabled = true;
-  seedGuidedSearchConfig();
+  const localDevAddress = 'https://localhost.convermax.dev:3000';
+  const legacyAssetBaseUrl = `${localDevAddress}/temp`;
+  const localStoreKey = 'convermax-dev-local-store';
+  const failedStoreKey = 'convermax-dev-failed-store';
+  const searchScriptPattern = /^search(?:-[^./]+)?(?:\.min)?\.js$/;
 
-  // Storefront themes may replace window.Convermax.config wholesale in inline
-  // scripts (cimotorsports.com does), wiping the document-start seed — so the
-  // seed is re-applied right before the local script injection too.
-  function seedGuidedSearchConfig() {
-    window.Convermax.config = window.Convermax.config || {};
-    window.Convermax.config.guidedSearch = {
-      ...window.Convermax.config.guidedSearch,
-      enabled: true,
-      sidecarUrl: 'https://localhost.convermax.dev:3000/temp/guided-search.js',
+  let stores;
+  let selectedStore;
+  let productionScript;
+  let localScript;
+  let legacyServeAvailable = false;
+  let forceInjection = false;
+  let reloadStarted = false;
+
+  try {
+    forceInjection = Boolean(localStorage['cm_inject-script']);
+  } catch {
+    // Storage may be unavailable on this page.
+  }
+
+  function log(message) {
+    console.log(`[Convermax Dev v21] ${message}`);
+  }
+
+  function parseScript(element) {
+    const url = new URL(element.src, location.href);
+    const customerHost = url.hostname.match(/^([^.]+)\.myconvermax\.com$/);
+
+    if (!customerHost && url.hostname !== 'client.convermax.com') {
+      return null;
+    }
+
+    const filename = url.pathname.split('/').pop();
+    if (!searchScriptPattern.test(filename)) {
+      return null;
+    }
+
+    const staticScriptName = url.pathname.match(/^\/static\/([^/]+)\//)?.[1];
+    const scriptId = staticScriptName || customerHost?.[1];
+
+    if (!scriptId) {
+      return null;
+    }
+
+    return {
+      url,
+      scriptId,
+      backendStoreId: customerHost?.[1] || staticScriptName,
     };
   }
 
-  function createMutationObserver() {
-    if (!document.body) {
-      window.setTimeout(createMutationObserver, 100);
+  function removeProductionAssets() {
+    if (!productionScript) {
+      productionScript = [...document.querySelectorAll('script[src]')]
+        .map(parseScript)
+        .find(Boolean);
+    }
+
+    if (!productionScript) {
       return;
     }
 
-    let inject;
-    try {
-      inject = localStorage['cm_inject-script'];
-    } catch (ex) {}
+    for (const element of document.querySelectorAll('script[src]')) {
+      const url = new URL(element.src, location.href);
 
-    new MutationObserver((_, observer) => {
-      const scriptTag = [...document.querySelectorAll('script[src*="convermax.com"]')].find((s) =>
-        /\/search(-[^.]+)?(\.(min\.)?js)/.test(s.src),
+      if (
+        url.origin === productionScript.url.origin &&
+        url.pathname === productionScript.url.pathname
+      ) {
+        element.remove();
+      }
+    }
+
+    const productionCssPath = productionScript.url.pathname.replace(
+      /(?:\.min)?\.js$/,
+      '.css',
+    );
+
+    for (const element of document.querySelectorAll('link[rel="stylesheet"][href]')) {
+      const url = new URL(element.href, location.href);
+
+      if (
+        url.origin === productionScript.url.origin &&
+        url.pathname.replace(/\.min\.css$/, '.css') === productionCssPath
+      ) {
+        element.remove();
+      }
+    }
+  }
+
+  function injectLocalScript() {
+    localScript = document.createElement('script');
+    localScript.src = `${selectedStore.assetBaseUrl}/search.js`;
+    localScript.async = false;
+    localScript.onerror = () => {
+      returnToProduction(`Failed to load ${localScript.src}`);
+    };
+
+    document.head.appendChild(localScript);
+
+    if (selectedStore.legacy) {
+      log('Using legacy /temp/search.js.');
+    } else {
+      log(`Using "${selectedStore.storeId}" from session storage.`);
+    }
+  }
+
+  function updatePage() {
+    if (!document.head) {
+      return;
+    }
+
+    if (selectedStore) {
+      removeProductionAssets();
+
+      if (!localScript) {
+        injectLocalScript();
+      }
+
+      return;
+    }
+
+    if (!stores) {
+      return;
+    }
+
+    const scripts = [...document.querySelectorAll('script[src]')]
+      .map(parseScript)
+      .filter(Boolean);
+
+    const configuredStoreId = window.Convermax?.config?.storeId;
+
+    if (!scripts.length && !configuredStoreId && !forceInjection) {
+      return;
+    }
+
+    if (scripts.length > 1) {
+      log('Multiple production search scripts found. Local injection skipped.');
+      observer.disconnect();
+      return;
+    }
+
+    const connectedScript = scripts[0];
+
+    let match = stores.find((store) => store.storeId === configuredStoreId);
+    let matchSource = 'window.Convermax.config.storeId';
+
+    if (!match && connectedScript) {
+      match = stores.find((store) => store.storeId === connectedScript.scriptId);
+      matchSource = 'connected script';
+    }
+
+    if (!match) {
+      const websiteMatches = stores.filter(
+        (store) => store.websiteOrigin === location.origin,
       );
 
-      if ((scriptTag || inject) && !window.ConvermaxDevScriptInjected) {
-        if (scriptTag) {
-          const src = scriptTag.getAttribute('src');
+      if (websiteMatches.length > 1) {
+        log('Multiple local stores match this website. Local injection skipped.');
+        observer.disconnect();
+        return;
+      }
 
-          if (!window.Convermax.config.storeId) {
-            window.Convermax.config.storeId =
-              src.match(/\/{2}(.+)\.myconvermax.com/)?.[1] ??
-              src.match(/client.convermax.com\/static\/(.+)\/search(-[^.]+)?(\.min)?\.js/)?.[1];
-          }
+      match = websiteMatches[0];
+      matchSource = 'website origin';
+    }
 
-          scriptTag.remove();
+    if (!match && legacyServeAvailable) {
+      match = {
+        assetBaseUrl: legacyAssetBaseUrl,
+        legacy: true,
+        storeId:
+          configuredStoreId ||
+          connectedScript?.scriptId ||
+          connectedScript?.backendStoreId ||
+          location.origin,
+      };
+      matchSource = 'legacy /temp/search.js';
+    }
+
+    if (!match) {
+      return;
+    }
+
+    if (match.storeId === failedStoreId) {
+      log(
+        `Local store "${match.storeId}" failed on the previous load. Production retained.`,
+      );
+      observer.disconnect();
+      return;
+    }
+
+    if (window.ConvermaxDevScriptInjected) {
+      observer.disconnect();
+      return;
+    }
+
+    const cachedStore = {
+      assetBaseUrl: match.assetBaseUrl,
+      backendStoreId: configuredStoreId || connectedScript?.backendStoreId,
+      legacy: Boolean(match.legacy),
+      productionScriptUrl: connectedScript?.url.href,
+      storeId: match.storeId,
+    };
+
+    try {
+      sessionStorage.setItem(localStoreKey, JSON.stringify(cachedStore));
+    } catch {
+      log('Session storage is unavailable. Local injection skipped.');
+      observer.disconnect();
+      return;
+    }
+
+    observer.disconnect();
+    log(`Matched "${match.storeId}" via ${matchSource}. Reloading with local assets.`);
+    location.reload();
+  }
+
+  function returnToProduction(message) {
+    if (reloadStarted) {
+      return;
+    }
+
+    reloadStarted = true;
+
+    try {
+      sessionStorage.removeItem(localStoreKey);
+      sessionStorage.setItem(failedStoreKey, selectedStore.storeId);
+    } catch {
+      // Storage may be unavailable on this page.
+    }
+
+    log(`${message}. Reloading with production assets.`);
+    location.reload();
+  }
+
+  function readCachedStore() {
+    try {
+      const store = JSON.parse(sessionStorage.getItem(localStoreKey));
+
+      if (
+        typeof store?.storeId === 'string' &&
+        typeof store?.assetBaseUrl === 'string'
+      ) {
+        return store;
+      }
+    } catch {
+      // Storage may be unavailable on this page.
+    }
+
+    return null;
+  }
+
+  function takeFailedStoreId() {
+    try {
+      const storeId = sessionStorage.getItem(failedStoreKey);
+      sessionStorage.removeItem(failedStoreKey);
+      return storeId;
+    } catch {
+      return null;
+    }
+  }
+
+  function useLegacyServe() {
+    fetch(`${legacyAssetBaseUrl}/search.js`, {
+      method: 'HEAD',
+      cache: 'no-store',
+    })
+      .then((response) => {
+        const contentType = response.headers.get('content-type') || '';
+
+        if (
+          !response.ok ||
+          !/(?:javascript|ecmascript)/i.test(contentType)
+        ) {
+          throw new Error('Legacy search.js is unavailable');
         }
 
-        window.ConvermaxDevScriptInjected = true;
-
-        setTimeout(() => {
-          observer.disconnect();
-
-          log(`${scriptInfo.name} v${scriptInfo.version} UserScript`);
-
-          seedGuidedSearchConfig();
-          injectScript('https://localhost.convermax.dev:3000/temp/search.js');
-        }, 500); // set it to 1000 or higher if script won't load
-      }
-
-      const styleTag = document.querySelector('link[href*="convermax.com"]');
-
-      if (styleTag) {
-        const localStyleTag = document.createElement('link');
-        localStyleTag.rel = 'stylesheet';
-        localStyleTag.href = 'https://localhost.convermax.dev:3000/temp/search.css';
-        styleTag.parentElement.replaceChild(localStyleTag, styleTag);
-      }
-    }).observe(document.documentElement, { childList: true, subtree: true });
+        legacyServeAvailable = true;
+        stores = [];
+        updatePage();
+      })
+      .catch(() => {
+        observer.disconnect();
+      });
   }
 
-  createMutationObserver();
+  const failedStoreId = takeFailedStoreId();
+  const cachedStore = readCachedStore();
+  const observer = new MutationObserver(updatePage);
 
-  window.addEventListener('keydown', (e) => {
-    const keyCode = e.code;
-
-    if (keyCode === 'Backquote' && keyCode === 'AltLeft') {
-      reloadCss();
-    }
+  observer.observe(document, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src', 'href'],
   });
 
-  function injectScript(src) {
-    const scriptTag = document.createElement('script');
-    scriptTag.src = src;
-    scriptTag.async = false;
-    document.body.appendChild(scriptTag);
-  }
+  window.addEventListener(
+    'load',
+    () => {
+      updatePage();
 
-  function reloadCss() {
-    const link = document.querySelector('[href^="https://localhost.convermax.dev:3000/temp/search.css"]');
-    const href = new URL(link.href);
-    href.searchParams.set('force_reload', Date.now());
-    link.href = href;
-    log('CSS Reloaded');
+      if (!selectedStore) {
+        observer.disconnect();
+      }
+    },
+    { once: true },
+  );
+
+  if (cachedStore) {
+    if (window.Convermax?.loaded) {
+      selectedStore = cachedStore;
+      returnToProduction('Production started before local development could be enabled');
+    } else {
+      selectedStore = cachedStore;
+      productionScript = cachedStore.productionScriptUrl
+        ? { url: new URL(cachedStore.productionScriptUrl) }
+        : null;
+
+      window.Convermax = window.Convermax || {};
+      window.Convermax.config = window.Convermax.config || {};
+
+      if (!window.Convermax.config.storeId && selectedStore.backendStoreId) {
+        window.Convermax.config.storeId = selectedStore.backendStoreId;
+      }
+
+      window.Convermax.devScriptEnabled = true;
+      window.ConvermaxDevScriptInjected = true;
+
+      updatePage();
+    }
+  } else {
+    fetch(`${localDevAddress}/__convermax/stores`, { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Gateway returned ${response.status}`);
+        }
+
+        return response.json();
+      })
+      .then((registry) => {
+        if (!Array.isArray(registry?.stores)) {
+          throw new Error('Gateway returned an invalid store registry');
+        }
+
+        stores = registry.stores;
+
+        if (!stores.length) {
+          observer.disconnect();
+          return;
+        }
+
+        updatePage();
+      })
+      .catch(useLegacyServe);
   }
 })();
