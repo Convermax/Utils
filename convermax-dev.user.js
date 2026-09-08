@@ -16,6 +16,7 @@
   'use strict';
 
   const localDevAddress = 'https://localhost.convermax.dev:3000';
+  const legacyAssetBaseUrl = `${localDevAddress}/temp`;
   const localStoreKey = 'convermax-dev-local-store';
   const failedStoreKey = 'convermax-dev-failed-store';
   const searchScriptPattern = /^search(?:-[^./]+)?(?:\.min)?\.js$/;
@@ -24,6 +25,7 @@
   let selectedStore;
   let productionScript;
   let localScript;
+  let legacyServeAvailable = false;
   let forceInjection = false;
   let reloadStarted = false;
 
@@ -112,7 +114,12 @@
     };
 
     document.head.appendChild(localScript);
-    log(`Using "${selectedStore.storeId}" from session storage.`);
+
+    if (selectedStore.legacy) {
+      log('Using legacy /temp/search.js.');
+    } else {
+      log(`Using "${selectedStore.storeId}" from session storage.`);
+    }
   }
 
   function updatePage() {
@@ -175,6 +182,19 @@
       matchSource = 'website origin';
     }
 
+    if (!match && legacyServeAvailable) {
+      match = {
+        assetBaseUrl: legacyAssetBaseUrl,
+        legacy: true,
+        storeId:
+          configuredStoreId ||
+          connectedScript?.scriptId ||
+          connectedScript?.backendStoreId ||
+          location.origin,
+      };
+      matchSource = 'legacy /temp/search.js';
+    }
+
     if (!match) {
       return;
     }
@@ -195,6 +215,7 @@
     const cachedStore = {
       assetBaseUrl: match.assetBaseUrl,
       backendStoreId: configuredStoreId || connectedScript?.backendStoreId,
+      legacy: Boolean(match.legacy),
       productionScriptUrl: connectedScript?.url.href,
       storeId: match.storeId,
     };
@@ -257,6 +278,30 @@
     }
   }
 
+  function useLegacyServe() {
+    fetch(`${legacyAssetBaseUrl}/search.js`, {
+      method: 'HEAD',
+      cache: 'no-store',
+    })
+      .then((response) => {
+        const contentType = response.headers.get('content-type') || '';
+
+        if (
+          !response.ok ||
+          !/(?:javascript|ecmascript)/i.test(contentType)
+        ) {
+          throw new Error('Legacy search.js is unavailable');
+        }
+
+        legacyServeAvailable = true;
+        stores = [];
+        updatePage();
+      })
+      .catch(() => {
+        observer.disconnect();
+      });
+  }
+
   const failedStoreId = takeFailedStoreId();
   const cachedStore = readCachedStore();
   const observer = new MutationObserver(updatePage);
@@ -312,6 +357,10 @@
         return response.json();
       })
       .then((registry) => {
+        if (!Array.isArray(registry?.stores)) {
+          throw new Error('Gateway returned an invalid store registry');
+        }
+
         stores = registry.stores;
 
         if (!stores.length) {
@@ -321,8 +370,6 @@
 
         updatePage();
       })
-      .catch(() => {
-        observer.disconnect();
-      });
+      .catch(useLegacyServe);
   }
 })();
