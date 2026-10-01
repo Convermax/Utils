@@ -4,7 +4,7 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      21
+// @version      22
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -36,7 +36,7 @@
   }
 
   function log(message) {
-    console.log(`[Convermax Dev v21] ${message}`);
+    console.log(`[Convermax Dev v22] ${message}`);
   }
 
   function parseScript(element) {
@@ -64,6 +64,12 @@
       scriptId,
       backendStoreId: customerHost?.[1] || staticScriptName,
     };
+  }
+
+  // A store's stylesheet can come from another Convermax host than its script
+  // (client.convermax.com next to <store>.myconvermax.com).
+  function isConvermaxAssetHost(hostname) {
+    return hostname === 'client.convermax.com' || /^[^.]+\.myconvermax\.com$/.test(hostname);
   }
 
   function removeProductionAssets() {
@@ -97,7 +103,7 @@
       const url = new URL(element.href, location.href);
 
       if (
-        url.origin === productionScript.url.origin &&
+        isConvermaxAssetHost(url.hostname) &&
         url.pathname.replace(/\.min\.css$/, '.css') === productionCssPath
       ) {
         element.remove();
