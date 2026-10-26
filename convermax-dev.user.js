@@ -4,7 +4,7 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      22
+// @version      22.1
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -99,7 +99,12 @@
       '.css',
     );
 
-    for (const element of document.querySelectorAll('link[rel="stylesheet"][href]')) {
+    const cssSelector = [
+      'link[rel="stylesheet"][href]',
+      'link[rel="preload"][as="style"][href]',
+    ].join(', ');
+
+    for (const element of document.querySelectorAll(cssSelector)) {
       const url = new URL(element.href, location.href);
 
       if (
