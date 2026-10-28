@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.15.1
+// @version      0.15.2
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -596,7 +596,7 @@ function fixNoAccessToShopifyAdmin() {
     GM_setValue('fixShopifyAdminStartedAt', Date.now());
     GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
     window.location.replace(
-      `https://dev.shopify.com/dashboard/129335902/stores?store_type=collaborations&search_term=${storeId}`,
+      `https://dev.shopify.com/dashboard/129335902/stores?search_term=${storeId}`,
     );
     return true;
   } else if (isAdminLogin && !isActionExpired('fixShopifyAdmin') && redirectPath) {
@@ -614,34 +614,26 @@ function fixNoStoreAtShopifyPartners() {
 
   const url = window.location.href;
   const isPartnersSearch =
-    url.startsWith('https://dev.shopify.com/dashboard/129335902/stores') && url.includes('&search_term=');
-  const isNoResults = !!document
-    .querySelector('#stores-table .w-full p.text-body')
-    ?.innerText?.includes('No stores found');
-  const Results = document.querySelectorAll('#stores-table table tbody tr');
+    url.startsWith('https://dev.shopify.com/dashboard/129335902/stores') && url.includes('search_term=');
+  const storeId = new URL(url).searchParams.get('search_term');
+  const isNoResults = !!document.querySelector('#stores-table')?.innerText?.includes('No stores found');
+  const results = [...document.querySelectorAll('#stores-table table tbody tr')];
+  // Prefer the row matching the store handle, fall back to the first one
+  const row = results.find((r) => storeId && r.innerText.includes(storeId)) ?? results[0];
+  const loginLink = row?.querySelector(
+    '[role="menuitem"][href$="/login"], [role="menuitem"][href$="/collaborator_login"]',
+  );
 
-  if (isPartnersSearch && isNoResults && url.includes('store_type=collaborations')) {
-    window.location.replace(url.replace('store_type=collaborations', 'store_type=dev'));
+  if (!isPartnersSearch) {
+    return false;
+  } else if (loginLink) {
+    window.location.replace(loginLink.href);
     return true;
-  } else if (isPartnersSearch && isNoResults && url.includes('store_type=dev')) {
-    window.location.replace(url.replace('store_type=dev', 'store_type=client_transfer'));
-    return true;
-  } else if (
-    isPartnersSearch &&
-    [...Results].length &&
-    Results[0].getAttribute('data-controller') === 'row-link'
-  ) {
-    const link = Results[0].querySelector('a').href;
-    window.location.replace(link);
-    return true;
-  } else if (
-    isPartnersSearch &&
-    (isNoResults || Results[0].querySelector('td:nth-child(3)').innerText.includes('Expired'))
-  ) {
+  } else if (isNoResults || row) {
+    // No results, expired or otherwise without Log in action: offer to request access
     const requestButton = window.document.querySelector(
       'a[href="/dashboard/129335902/stores/collaborations/new"]',
     );
-    const storeId = new URL(url)?.searchParams?.get('search_term');
     if (requestButton && storeId) {
       requestButton.setAttribute('href', `${requestButton.getAttribute('href')}?store_url=${storeId}`);
     }
@@ -881,7 +873,7 @@ function main() {
   if (url.startsWith('https://admin.shopify.com/store/')) {
     ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
   }
-  if (url.startsWith('https://dev.shopify.com/dashboard/129335902/stores') && url.includes('&search_term=')) {
+  if (url.startsWith('https://dev.shopify.com/dashboard/129335902/stores') && url.includes('search_term=')) {
     ensureContextIsSet(() => fixNoStoreAtShopifyPartners(), 10000);
   }
   if (url.startsWith('https://dev.shopify.com/dashboard/129335902/stores/collaborations/new')) {
