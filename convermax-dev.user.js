@@ -4,7 +4,7 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      22.1
+// @version      22.2
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -345,7 +345,9 @@
   if (cachedStore) {
     if (window.Convermax?.loaded) {
       selectedStore = cachedStore;
-      returnToProduction('Production started before local development could be enabled');
+      returnToProduction(
+        'Production started before local development could be enabled (Tampermonkey runs this script at document-start only with Settings > Content Script API = "UserScripts API Dynamic")',
+      );
     } else {
       selectedStore = cachedStore;
       productionScript = cachedStore.productionScriptUrl
