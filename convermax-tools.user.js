@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.15.2
+// @version      0.16.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -9,6 +9,7 @@
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=convermax.com
 // @grant        GM_setClipboard
+// @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
 // @grant        GM_openInTab
@@ -857,6 +858,42 @@ function injectShopifyPartnersStoreRequest() {
   }
 }
 
+function injectYouTrackStoreIdCopyButton() {
+  // "Copied" feedback: the icon turns green on press and fades back over 1s
+  GM_addStyle(`
+    .cm-copy-store-id [data-test="ring-icon"] { transition: color 1s; }
+    .cm-copy-store-id:active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
+  `);
+
+  const addButton = () => {
+    const field = [...document.querySelectorAll('[data-test="field"]')].find(
+      (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === 'Store Id',
+    );
+    const template = document.querySelector('[data-test="copy-button"]:not(.cm-copy-store-id)');
+
+    if (!field || !template || field.querySelector('.cm-copy-store-id')) {
+      return;
+    }
+
+    // Clone YouTrack's own copy button (without React handlers) to inherit its look
+    const button = template.cloneNode(true);
+    button.removeAttribute('id');
+    button.removeAttribute('aria-describedby');
+    button.classList.add('cm-copy-store-id');
+    button.title = 'Copy Store Id';
+    button.ariaLabel = 'Copy Store Id';
+    button.addEventListener('click', () => {
+      GM_setClipboard(field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim());
+    });
+
+    field.querySelector('[data-test="field-label"]').append(button);
+  };
+
+  // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the button in place
+  new MutationObserver(addButton).observe(document.body, { childList: true, subtree: true });
+  addButton();
+}
+
 function main() {
   bypassShopifyStubInit();
   bypassBigCommerceStubInit();
@@ -870,6 +907,9 @@ function main() {
   });
 
   const url = window.location.href;
+  if (url.startsWith('https://tasks.convermax.com/issue/')) {
+    injectYouTrackStoreIdCopyButton();
+  }
   if (url.startsWith('https://admin.shopify.com/store/')) {
     ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
   }
