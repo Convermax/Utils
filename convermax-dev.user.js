@@ -4,7 +4,7 @@
 // @description  convermax-dev-client
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-dev.user.js
-// @version      22.2
+// @version      22.3
 // @run-at       document-start
 // @grant        none
 // @match        *://*/*
@@ -28,6 +28,8 @@
   let legacyServeAvailable = false;
   let forceInjection = false;
   let reloadStarted = false;
+  // The readyState is already 'interactive' while the page's deferred scripts (the store's config.js) are still pending.
+  let deferredScriptsRan = document.readyState === 'complete';
 
   try {
     forceInjection = Boolean(localStorage['cm_inject-script']);
@@ -141,7 +143,7 @@
     if (selectedStore) {
       removeProductionAssets();
 
-      if (document.readyState === 'loading') {
+      if (!deferredScriptsRan) {
         return;
       }
 
@@ -328,11 +330,19 @@
     attributeFilter: ['src', 'href'],
   });
 
-  document.addEventListener('DOMContentLoaded', updatePage, { once: true });
+  document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+      deferredScriptsRan = true;
+      updatePage();
+    },
+    { once: true },
+  );
 
   window.addEventListener(
     'load',
     () => {
+      deferredScriptsRan = true;
       updatePage();
 
       if (!selectedStore) {
