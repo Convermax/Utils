@@ -858,7 +858,7 @@ function injectShopifyPartnersStoreRequest() {
   }
 }
 
-function injectYouTrackStoreIdButtons() {
+function injectYouTrackFieldButtons() {
   // The buttons sit inline in the label, spaced like YouTrack's own field links (left padding only; the element
   // type in the selector outweighs YouTrack's button padding, the negative margin keeps the label 20px high).
   // Icons turn green on press and fade back over 1s
@@ -868,29 +868,29 @@ function injectYouTrackStoreIdButtons() {
     :is(.cm-copy, .cm-search):active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
   `);
 
-  const addButtons = () => {
+  // Every field gets a copy button, the Store Id one also a link to all the issues with the same Store Id
+  const addButtons = (fieldName) => {
     const field = [...document.querySelectorAll('[data-test="field"]')].find(
-      (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === 'Store Id',
+      (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === fieldName,
     );
     const template = document.querySelector('[data-test="copy-button"]');
     // YouTrack's own magnifier: the side nav has it on issue pages, the query assist box on the agile board
     const searchIcon = document.querySelector(
       '[data-test="search-button"] svg, [data-test="query-assist-search-icon"] svg',
     );
+    const withSearch = fieldName === 'Store Id';
 
-    if (!field || !template || !searchIcon) {
+    if (!field || !template || (withSearch && !searchIcon)) {
       return;
     }
 
-    const getStoreId = () =>
-      field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim();
+    const getValue = () => field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim();
     // Query by the field name, not by text, so only issues with this exact Store Id match
     const getSearchUrl = () =>
-      `${window.location.origin}/issues?q=Store%20Id:%20${encodeURIComponent(getStoreId())}`;
+      `${window.location.origin}/issues?q=Store%20Id:%20${encodeURIComponent(getValue())}`;
 
-    const existingLink = field.querySelector('.cm-search');
-    if (existingLink) {
-      existingLink.href = getSearchUrl(); // the value may have been edited
+    if (field.querySelector('.cm-copy')) {
+      field.querySelector('.cm-search')?.setAttribute('href', getSearchUrl()); // the value may have been edited
       return;
     }
 
@@ -904,24 +904,28 @@ function injectYouTrackStoreIdButtons() {
       return button;
     };
 
-    const copy = createButton('button', 'cm-copy', 'Copy Store Id');
-    copy.addEventListener('click', () => GM_setClipboard(getStoreId()));
+    const buttons = [createButton('button', 'cm-copy', `Copy ${fieldName}`)];
+    buttons[0].addEventListener('click', () => GM_setClipboard(getValue()));
 
-    const search = createButton('a', 'cm-search', 'Search all issues with this Store Id');
-    search.href = getSearchUrl();
-    // Only the shapes are taken over: the copy icon's <svg> keeps the glyph class that aligns the icon
-    search.querySelector('svg').innerHTML = searchIcon.innerHTML;
+    if (withSearch) {
+      const search = createButton('a', 'cm-search', 'Search all issues with this Store Id');
+      search.href = getSearchUrl();
+      // Only the shapes are taken over: the copy icon's <svg> keeps the glyph class that aligns the icon
+      search.querySelector('svg').innerHTML = searchIcon.innerHTML;
+      buttons.push(search);
+    }
 
     // A label passes its :hover/:active to the control it labels, by default the first button inside it.
     // Pointing it at nothing leaves it without one.
     const label = field.querySelector('[data-test="field-label"]');
     label.htmlFor = 'cm-no-control';
-    label.append(copy, search);
+    label.append(...buttons);
   };
 
   // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the buttons in place
-  new MutationObserver(addButtons).observe(document.body, { childList: true, subtree: true });
-  addButtons();
+  const addAllButtons = () => ['Store Id', 'Missive Link', 'Url'].forEach(addButtons);
+  new MutationObserver(addAllButtons).observe(document.body, { childList: true, subtree: true });
+  addAllButtons();
 }
 
 function main() {
@@ -938,7 +942,7 @@ function main() {
 
   const url = window.location.href;
   if (url.startsWith('https://tasks.convermax.com/')) {
-    injectYouTrackStoreIdButtons();
+    injectYouTrackFieldButtons();
   }
   if (url.startsWith('https://admin.shopify.com/store/')) {
     ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
