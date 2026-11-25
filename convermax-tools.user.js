@@ -484,6 +484,16 @@ const actions = {
           GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
       },
       {
+        label: 'Convermax Tasks',
+        hotkey: '6',
+        order: 6,
+        action: () =>
+          GM_openInTab(
+            `https://tasks.convermax.com/issues?q=Store%20Id:%20${encodeURIComponent(actions.common.storeId)}`,
+            { active: true },
+          ),
+      },
+      {
         // label: 'Copy Convermax StoreID',
         hotkey: 'Backquote',
         ctrlKey: true,
