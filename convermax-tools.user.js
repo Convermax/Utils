@@ -859,12 +859,11 @@ function injectShopifyPartnersStoreRequest() {
 }
 
 function injectYouTrackStoreIdButtons() {
-  // The buttons share the label row, spaced like YouTrack's own field links (left padding only; the element
-  // type in the selector outweighs YouTrack's button padding). Icons turn green on press and fade back over 1s
+  // The buttons sit inline in the label, spaced like YouTrack's own field links (left padding only; the element
+  // type in the selector outweighs YouTrack's button padding, the negative margin keeps the label 20px high).
+  // Icons turn green on press and fade back over 1s
   GM_addStyle(`
-    .cm-store-id :has(> [data-test="field-label"]) { flex-flow: row wrap; align-items: center; }
-    .cm-store-id [data-test="field-form-wrapper"] { flex-basis: 100%; }
-    .cm-store-id :is(button.cm-copy, a.cm-search) { margin: -4px 0; padding: 0 0 0 8px; }
+    [data-test="field-label"] :is(button.cm-copy, a.cm-search) { margin: -4px 0; padding: 0 0 0 8px; }
     :is(.cm-copy, .cm-search) [data-test="ring-icon"] { transition: color 1s; }
     :is(.cm-copy, .cm-search):active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
   `);
@@ -874,7 +873,10 @@ function injectYouTrackStoreIdButtons() {
       (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === 'Store Id',
     );
     const template = document.querySelector('[data-test="copy-button"]');
-    const searchIcon = document.querySelector('[data-test="search-button"] [data-test="ring-icon"]');
+    // YouTrack's own magnifier: the side nav has it on issue pages, the query assist box on the agile board
+    const searchIcon = document.querySelector(
+      '[data-test="search-button"] svg, [data-test="query-assist-search-icon"] svg',
+    );
 
     if (!field || !template || !searchIcon) {
       return;
@@ -907,11 +909,14 @@ function injectYouTrackStoreIdButtons() {
 
     const search = createButton('a', 'cm-search', 'Search all issues with this Store Id');
     search.href = getSearchUrl();
-    search.querySelector('[data-test="ring-icon"]').innerHTML = searchIcon.innerHTML;
+    // Only the shapes are taken over: the copy icon's <svg> keeps the glyph class that aligns the icon
+    search.querySelector('svg').innerHTML = searchIcon.innerHTML;
 
-    // Not inside the <label>: it would pass its :hover/:active over to the first button within it
-    field.classList.add('cm-store-id');
-    field.querySelector('[data-test="field-label"]').after(copy, search);
+    // A label passes its :hover/:active to the control it labels, by default the first button inside it.
+    // Pointing it at nothing leaves it without one.
+    const label = field.querySelector('[data-test="field-label"]');
+    label.htmlFor = 'cm-no-control';
+    label.append(copy, search);
   };
 
   // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the buttons in place
@@ -932,7 +937,7 @@ function main() {
   });
 
   const url = window.location.href;
-  if (url.startsWith('https://tasks.convermax.com/issue/')) {
+  if (url.startsWith('https://tasks.convermax.com/')) {
     injectYouTrackStoreIdButtons();
   }
   if (url.startsWith('https://admin.shopify.com/store/')) {
