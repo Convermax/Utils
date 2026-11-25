@@ -596,9 +596,7 @@ function fixNoAccessToShopifyAdmin() {
   if (isAdminLogin && isNotAllowed) {
     GM_setValue('fixShopifyAdminStartedAt', Date.now());
     GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
-    window.location.replace(
-      `https://dev.shopify.com/dashboard/129335902/stores?search_term=${storeId}`,
-    );
+    window.location.replace(`https://dev.shopify.com/dashboard/129335902/stores?search_term=${storeId}`);
     return true;
   } else if (isAdminLogin && !isActionExpired('fixShopifyAdmin') && redirectPath) {
     GM_setValue('fixShopifyAdminLocation', '');
