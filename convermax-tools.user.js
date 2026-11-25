@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         Convermax Tools
 // @namespace    convermax-dev
-// @version      0.16.0
+// @version      0.17.0
 // @description  Convermax Tools
 // @downloadURL  https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
 // @updateURL    https://github.com/Convermax/Utils/raw/main/convermax-tools.user.js
@@ -484,6 +484,16 @@ const actions = {
           GM_openInTab(`https://myconvermax.com/${actions.common.storeId}/status`, { active: true }),
       },
       {
+        label: 'Convermax Tasks',
+        hotkey: '6',
+        order: 6,
+        action: () =>
+          GM_openInTab(
+            `https://tasks.convermax.com/issues?q=Store%20Id:%20${encodeURIComponent(actions.common.storeId)}`,
+            { active: true },
+          ),
+      },
+      {
         // label: 'Copy Convermax StoreID',
         hotkey: 'Backquote',
         ctrlKey: true,
@@ -596,9 +606,7 @@ function fixNoAccessToShopifyAdmin() {
   if (isAdminLogin && isNotAllowed) {
     GM_setValue('fixShopifyAdminStartedAt', Date.now());
     GM_setValue('fixShopifyAdminLocation', path.replace(storeId, ''));
-    window.location.replace(
-      `https://dev.shopify.com/dashboard/129335902/stores?search_term=${storeId}`,
-    );
+    window.location.replace(`https://dev.shopify.com/dashboard/129335902/stores?search_term=${storeId}`);
     return true;
   } else if (isAdminLogin && !isActionExpired('fixShopifyAdmin') && redirectPath) {
     GM_setValue('fixShopifyAdminLocation', '');
@@ -858,40 +866,74 @@ function injectShopifyPartnersStoreRequest() {
   }
 }
 
-function injectYouTrackStoreIdCopyButton() {
-  // "Copied" feedback: the icon turns green on press and fades back over 1s
+function injectYouTrackFieldButtons() {
+  // The buttons sit inline in the label, spaced like YouTrack's own field links (left padding only; the element
+  // type in the selector outweighs YouTrack's button padding, the negative margin keeps the label 20px high).
+  // Icons turn green on press and fade back over 1s
   GM_addStyle(`
-    .cm-copy-store-id [data-test="ring-icon"] { transition: color 1s; }
-    .cm-copy-store-id:active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
+    [data-test="field-label"] :is(button.cm-copy, a.cm-search) { margin: -4px 0; padding: 0 0 0 8px; }
+    :is(.cm-copy, .cm-search) [data-test="ring-icon"] { transition: color 1s; }
+    :is(.cm-copy, .cm-search):active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
   `);
 
-  const addButton = () => {
+  // Every field gets a copy button, the Store Id one also a link to all the issues with the same Store Id
+  const addButtons = (fieldName) => {
     const field = [...document.querySelectorAll('[data-test="field"]')].find(
-      (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === 'Store Id',
+      (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === fieldName,
     );
-    const template = document.querySelector('[data-test="copy-button"]:not(.cm-copy-store-id)');
+    const template = document.querySelector('[data-test="copy-button"]');
+    // YouTrack's own magnifier: the side nav has it on issue pages, the query assist box on the agile board
+    const searchIcon = document.querySelector(
+      '[data-test="search-button"] svg, [data-test="query-assist-search-icon"] svg',
+    );
+    const withSearch = fieldName === 'Store Id';
 
-    if (!field || !template || field.querySelector('.cm-copy-store-id')) {
+    if (!field || !template || (withSearch && !searchIcon)) {
       return;
     }
 
-    // Clone YouTrack's own copy button (without React handlers) to inherit its look
-    const button = template.cloneNode(true);
-    button.removeAttribute('id');
-    button.removeAttribute('aria-describedby');
-    button.classList.add('cm-copy-store-id');
-    button.title = 'Copy Store Id';
-    button.ariaLabel = 'Copy Store Id';
-    button.addEventListener('click', () => {
-      GM_setClipboard(field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim());
-    });
+    const getValue = () => field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim();
+    // Query by the field name, not by text, so only issues with this exact Store Id match
+    const getSearchUrl = () =>
+      `${window.location.origin}/issues?q=Store%20Id:%20${encodeURIComponent(getValue())}`;
 
-    field.querySelector('[data-test="field-label"]').append(button);
+    if (field.querySelector('.cm-copy')) {
+      field.querySelector('.cm-search')?.setAttribute('href', getSearchUrl()); // the value may have been edited
+      return;
+    }
+
+    // Look-alikes of YouTrack's own copy button: same classes and icon, none of its React handlers
+    const createButton = (tag, className, title) => {
+      const button = document.createElement(tag);
+      button.className = `${template.className} ${className}`;
+      button.innerHTML = template.innerHTML;
+      button.title = title;
+      button.ariaLabel = title;
+      return button;
+    };
+
+    const buttons = [createButton('button', 'cm-copy', `Copy ${fieldName}`)];
+    buttons[0].addEventListener('click', () => GM_setClipboard(getValue()));
+
+    if (withSearch) {
+      const search = createButton('a', 'cm-search', 'Search all issues with this Store Id');
+      search.href = getSearchUrl();
+      // Only the shapes are taken over: the copy icon's <svg> keeps the glyph class that aligns the icon
+      search.querySelector('svg').innerHTML = searchIcon.innerHTML;
+      buttons.push(search);
+    }
+
+    // A label passes its :hover/:active to the control it labels, by default the first button inside it.
+    // Pointing it at nothing leaves it without one.
+    const label = field.querySelector('[data-test="field-label"]');
+    label.htmlFor = 'cm-no-control';
+    label.append(...buttons);
   };
 
-  // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the button in place
-  new MutationObserver(addButton).observe(document.body, { childList: true, subtree: true });
-  addButton();
+  // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the buttons in place
+  const addAllButtons = () => ['Store Id', 'Missive Link', 'Url'].forEach(addButtons);
+  new MutationObserver(addAllButtons).observe(document.body, { childList: true, subtree: true });
+  addAllButtons();
 }
 
 function main() {
@@ -907,8 +949,8 @@ function main() {
   });
 
   const url = window.location.href;
-  if (url.startsWith('https://tasks.convermax.com/issue/')) {
-    injectYouTrackStoreIdCopyButton();
+  if (url.startsWith('https://tasks.convermax.com/')) {
+    injectYouTrackFieldButtons();
   }
   if (url.startsWith('https://admin.shopify.com/store/')) {
     ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
