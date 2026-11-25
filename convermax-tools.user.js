@@ -858,40 +858,65 @@ function injectShopifyPartnersStoreRequest() {
   }
 }
 
-function injectYouTrackStoreIdCopyButton() {
-  // "Copied" feedback: the icon turns green on press and fades back over 1s
+function injectYouTrackStoreIdButtons() {
+  // The buttons share the label row, spaced like YouTrack's own field links (left padding only; the element
+  // type in the selector outweighs YouTrack's button padding). Icons turn green on press and fade back over 1s
   GM_addStyle(`
-    .cm-copy-store-id [data-test="ring-icon"] { transition: color 1s; }
-    .cm-copy-store-id:active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
+    .cm-store-id :has(> [data-test="field-label"]) { flex-flow: row wrap; align-items: center; }
+    .cm-store-id [data-test="field-form-wrapper"] { flex-basis: 100%; }
+    .cm-store-id :is(button.cm-copy, a.cm-search) { margin: -4px 0; padding: 0 0 0 8px; }
+    :is(.cm-copy, .cm-search) [data-test="ring-icon"] { transition: color 1s; }
+    :is(.cm-copy, .cm-search):active [data-test="ring-icon"] { color: #1a9d3a; transition: none; }
   `);
 
-  const addButton = () => {
+  const addButtons = () => {
     const field = [...document.querySelectorAll('[data-test="field"]')].find(
       (f) => f.querySelector('[data-test="field-label"]')?.textContent.trim() === 'Store Id',
     );
-    const template = document.querySelector('[data-test="copy-button"]:not(.cm-copy-store-id)');
+    const template = document.querySelector('[data-test="copy-button"]');
+    const searchIcon = document.querySelector('[data-test="search-button"] [data-test="ring-icon"]');
 
-    if (!field || !template || field.querySelector('.cm-copy-store-id')) {
+    if (!field || !template || !searchIcon) {
       return;
     }
 
-    // Clone YouTrack's own copy button (without React handlers) to inherit its look
-    const button = template.cloneNode(true);
-    button.removeAttribute('id');
-    button.removeAttribute('aria-describedby');
-    button.classList.add('cm-copy-store-id');
-    button.title = 'Copy Store Id';
-    button.ariaLabel = 'Copy Store Id';
-    button.addEventListener('click', () => {
-      GM_setClipboard(field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim());
-    });
+    const getStoreId = () =>
+      field.querySelector('[data-test~="field-value"]')?.firstChild?.textContent.trim();
+    // Query by the field name, not by text, so only issues with this exact Store Id match
+    const getSearchUrl = () =>
+      `${window.location.origin}/issues?q=Store%20Id:%20${encodeURIComponent(getStoreId())}`;
 
-    field.querySelector('[data-test="field-label"]').append(button);
+    const existingLink = field.querySelector('.cm-search');
+    if (existingLink) {
+      existingLink.href = getSearchUrl(); // the value may have been edited
+      return;
+    }
+
+    // Look-alikes of YouTrack's own copy button: same classes and icon, none of its React handlers
+    const createButton = (tag, className, title) => {
+      const button = document.createElement(tag);
+      button.className = `${template.className} ${className}`;
+      button.innerHTML = template.innerHTML;
+      button.title = title;
+      button.ariaLabel = title;
+      return button;
+    };
+
+    const copy = createButton('button', 'cm-copy', 'Copy Store Id');
+    copy.addEventListener('click', () => GM_setClipboard(getStoreId()));
+
+    const search = createButton('a', 'cm-search', 'Search all issues with this Store Id');
+    search.href = getSearchUrl();
+    search.querySelector('[data-test="ring-icon"]').innerHTML = searchIcon.innerHTML;
+
+    // Not inside the <label>: it would pass its :hover/:active over to the first button within it
+    field.classList.add('cm-store-id');
+    field.querySelector('[data-test="field-label"]').after(copy, search);
   };
 
-  // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the button in place
-  new MutationObserver(addButton).observe(document.body, { childList: true, subtree: true });
-  addButton();
+  // YouTrack is a SPA: the sidebar re-renders on navigation and edits, so keep the buttons in place
+  new MutationObserver(addButtons).observe(document.body, { childList: true, subtree: true });
+  addButtons();
 }
 
 function main() {
@@ -908,7 +933,7 @@ function main() {
 
   const url = window.location.href;
   if (url.startsWith('https://tasks.convermax.com/issue/')) {
-    injectYouTrackStoreIdCopyButton();
+    injectYouTrackStoreIdButtons();
   }
   if (url.startsWith('https://admin.shopify.com/store/')) {
     ensureContextIsSet(() => fixNoAccessToShopifyAdmin(), 10000);
